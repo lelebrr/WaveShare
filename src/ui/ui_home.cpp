@@ -113,6 +113,24 @@ void ui_home_show() {
   // Card 4: Uptime
   create_stat_card(_statsContainer, LV_SYMBOL_LOOP, "Tempo", &_lblUptime,
                    g_state.uptime_seconds / 60);
+
+  // 3. Apps Launcher Button (Floating Bottom Center) - Large Touch Target
+  lv_obj_t *btnApps = lv_btn_create(content);
+  lv_obj_set_size(btnApps, 120, 60); // Wider and taller for easy thumb press
+  lv_obj_align(btnApps, LV_ALIGN_BOTTOM_MID, 0, -5);
+  lv_obj_set_style_bg_color(btnApps, lv_color_hex(0x222222), 0);
+  lv_obj_set_style_border_color(btnApps, COLOR_NEON_BLUE, 0);
+  lv_obj_set_style_border_width(btnApps, 2, 0);
+  lv_obj_set_style_radius(btnApps, 30, 0); // Pill shape
+  lv_obj_add_event_cb(btnApps, [](lv_event_t* e){
+      extern void ui_launcher_show();
+      ui_launcher_show();
+  }, LV_EVENT_CLICKED, NULL);
+  
+  lv_obj_t *lblApps = lv_label_create(btnApps);
+  lv_label_set_text(lblApps, LV_SYMBOL_LIST " APPS"); // Added text for clarity
+  lv_obj_set_style_text_font(lblApps, &lv_font_montserrat_20, 0); // Larger font
+  lv_obj_center(lblApps);
 }
 
 void ui_home_update() {

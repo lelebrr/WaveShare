@@ -1,7 +1,8 @@
-tanakamasayuki/TensorFlowLite_ESP32
-arduino-libraries/NTPClient@^3.2.1
+bitbank2/PNGdec@^1.0.1
 lewisxhe/XPowersLib@^0.2.0
 mathieucarbou/ESPAsyncWebServer@^3.6.0
-bitbank2/PNGdec@^1.0.1
-bblanchon/ArduinoJson@^6.21.5
+crankyoldgit/IRremoteESP8266@^2.8.6
 mathieucarbou/AsyncTCP@^3.3.2
+bblanchon/ArduinoJson@^6.21.5
+tanakamasayuki/TensorFlowLite_ESP32
+arduino-libraries/NTPClient@^3.2.1

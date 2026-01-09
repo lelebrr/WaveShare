@@ -43,10 +43,10 @@ static void btn_sysinfo_cb(lv_event_t *e) {
 }
 
 static void create_menu_item(lv_obj_t *parent, const char *icon,
-                             const char *text, lv_event_cb_t cb, int y) {
+                             const char *text, lv_event_cb_t cb) {
   lv_obj_t *btn = lv_btn_create(parent);
-  lv_obj_set_size(btn, lv_pct(90), 50);
-  lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, y);
+  lv_obj_set_width(btn, LV_PCT(100));
+  lv_obj_set_height(btn, 60); // 60px target
   lv_obj_set_style_bg_color(btn, TOOLS_COLOR_PANEL, 0);
   lv_obj_set_style_radius(btn, 12, 0);
   lv_obj_set_style_border_width(btn, 1, 0);
@@ -56,53 +56,33 @@ static void create_menu_item(lv_obj_t *parent, const char *icon,
 
   lv_obj_t *iconLbl = lv_label_create(btn);
   lv_label_set_text(iconLbl, icon);
-  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_18, 0);
+  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_20, 0);
   lv_obj_align(iconLbl, LV_ALIGN_LEFT_MID, 10, 0);
 
   lv_obj_t *textLbl = lv_label_create(btn);
   lv_label_set_text(textLbl, text);
   lv_obj_set_style_text_color(textLbl, TOOLS_COLOR_TEXT, 0);
+  lv_obj_set_style_text_font(textLbl, &lv_font_montserrat_16, 0);
   lv_obj_align(textLbl, LV_ALIGN_LEFT_MID, 50, 0);
 }
 
 void ui_menu_tools_init() {
-  if (_initialized)
-    return;
+  if (_initialized) return;
 
   _screen = lv_obj_create(nullptr);
   lv_obj_set_style_bg_color(_screen, TOOLS_COLOR_BG, 0);
 
-  // Header
-  lv_obj_t *header = lv_obj_create(_screen);
-  lv_obj_set_size(header, lv_pct(100), 50);
-  lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
-  lv_obj_set_style_bg_color(header, TOOLS_COLOR_PANEL, 0);
-  lv_obj_set_style_border_width(header, 0, 0);
-  lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
+  // Scrollable Container
+  lv_obj_t* cont = ui_create_scrollable_menu_container(_screen, "Ferramentas");
 
-  lv_obj_t *btnBack = lv_btn_create(header);
-  lv_obj_set_size(btnBack, 40, 35);
-  lv_obj_align(btnBack, LV_ALIGN_LEFT_MID, 5, 0);
-  lv_obj_set_style_bg_opa(btnBack, LV_OPA_TRANSP, 0);
-  lv_obj_add_event_cb(btnBack, btn_back_cb, LV_EVENT_CLICKED, nullptr);
-  lv_obj_t *backArrow = lv_label_create(btnBack);
-  lv_label_set_text(backArrow, "←");
-  lv_obj_set_style_text_font(backArrow, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(backArrow, TOOLS_COLOR_ACCENT, 0);
-  lv_obj_center(backArrow);
-
-  lv_obj_t *title = lv_label_create(header);
-  lv_label_set_text(title, "🛠 Ferramentas");
-  lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(title, TOOLS_COLOR_ACCENT, 0);
-  lv_obj_align(title, LV_ALIGN_CENTER, 0, 0);
+  // Back Button
+  ui_create_back_btn(_screen, btn_back_cb);
 
   // Menu items
-  create_menu_item(_screen, "🔐", "Handshakes Capturados", btn_handshakes_cb,
-                   60);
-  create_menu_item(_screen, "📊", "Estatísticas", btn_stats_cb, 120);
-  create_menu_item(_screen, "💾", "SD Card", btn_sdcard_cb, 180);
-  create_menu_item(_screen, "ℹ", "Info do Sistema", btn_sysinfo_cb, 240);
+  create_menu_item(cont, "🔐", "Handshakes Capturados", btn_handshakes_cb);
+  create_menu_item(cont, "📊", "Estatísticas", btn_stats_cb);
+  create_menu_item(cont, "💾", "SD Card", btn_sdcard_cb);
+  create_menu_item(cont, "ℹ", "Info do Sistema", btn_sysinfo_cb);
 
   _initialized = true;
 }

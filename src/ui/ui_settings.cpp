@@ -58,7 +58,6 @@ static void on_dragon_click(lv_event_t *e) {
   audioDriver.playSound(SOUND_CLICK);
   settings_screen_active = false;
   ui_settings_dragon_show();
-  ui_settings_dragon_show();
 }
 
 static void on_ai_click(lv_event_t *e) {
@@ -107,7 +106,7 @@ static void create_grid_button(lv_obj_t *parent, const char *emoji,
   // Big Emoji/Icon
   lv_obj_t *ico = lv_label_create(cont);
   lv_label_set_text(ico, emoji);
-  lv_obj_set_style_text_font(ico, &lv_font_montserrat_48, 0); // Large icon
+  lv_obj_set_style_text_font(ico, &lv_font_montserrat_40, 0); // Large icon (use 32 if 40 not enabled)
   lv_obj_set_style_pad_bottom(ico, 10, 0);
 
   // Title

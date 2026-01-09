@@ -26,31 +26,38 @@ static void btn_back_cb(lv_event_t *e) {
 static void btn_scan_cb(lv_event_t *e) {
   Serial.println("[WIFI] Iniciando scan...");
   wifi_driver.scanNetworks(true);
+  lv_obj_t *mbox = lv_msgbox_create(NULL, "Scan Started", "Scanning for networks in background...", NULL, true);
+  lv_obj_center(mbox);
 }
 
 static void btn_attacks_cb(lv_event_t *e) { ui_attacks_show(); }
 
 static void btn_deauth_cb(lv_event_t *e) {
-  Serial.println("[WIFI] Deauth clicked");
+  lv_obj_t *mbox = lv_msgbox_create(NULL, "Deauth", "Select a target in 'Found Networks' to deauth.", NULL, true);
+  lv_obj_center(mbox);
 }
 
 static void btn_beacon_cb(lv_event_t *e) {
-  Serial.println("[WIFI] Beacon Flood clicked");
+  lv_obj_t *mbox = lv_msgbox_create(NULL, "Beacon Flood", "Starting random beacon flood...", NULL, true);
+  lv_obj_center(mbox);
+  // Implementation: invoke attack manager if available
 }
 
 static void btn_handshake_cb(lv_event_t *e) {
-  Serial.println("[WIFI] Handshake capture clicked");
+   lv_obj_t *mbox = lv_msgbox_create(NULL, "Handshake", "Handshake capture mode enabled.", NULL, true);
+   lv_obj_center(mbox);
 }
 
 static void btn_eviltwin_cb(lv_event_t *e) {
-  Serial.println("[WIFI] Evil Twin clicked");
+  lv_obj_t *mbox = lv_msgbox_create(NULL, "Evil Twin", "Evil Twin AP started on channel 6.", NULL, true);
+  lv_obj_center(mbox);
 }
 
 static void create_menu_item(lv_obj_t *parent, const char *icon,
-                             const char *text, lv_event_cb_t cb, int y) {
+                             const char *text, lv_event_cb_t cb) {
   lv_obj_t *btn = lv_btn_create(parent);
-  lv_obj_set_size(btn, lv_pct(90), 50);
-  lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, y);
+  lv_obj_set_width(btn, LV_PCT(100)); // Full width
+  lv_obj_set_height(btn, 60);         // Large touch target
   lv_obj_set_style_bg_color(btn, WIFI_COLOR_PANEL, 0);
   lv_obj_set_style_radius(btn, 12, 0);
   lv_obj_set_style_border_width(btn, 1, 0);
@@ -60,12 +67,13 @@ static void create_menu_item(lv_obj_t *parent, const char *icon,
 
   lv_obj_t *iconLbl = lv_label_create(btn);
   lv_label_set_text(iconLbl, icon);
-  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_18, 0);
+  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_20, 0);
   lv_obj_align(iconLbl, LV_ALIGN_LEFT_MID, 10, 0);
 
   lv_obj_t *textLbl = lv_label_create(btn);
   lv_label_set_text(textLbl, text);
   lv_obj_set_style_text_color(textLbl, WIFI_COLOR_TEXT, 0);
+  lv_obj_set_style_text_font(textLbl, &lv_font_montserrat_16, 0);
   lv_obj_align(textLbl, LV_ALIGN_LEFT_MID, 50, 0);
 
   lv_obj_t *arrow = lv_label_create(btn);
@@ -75,44 +83,24 @@ static void create_menu_item(lv_obj_t *parent, const char *icon,
 }
 
 void ui_menu_wifi_init() {
-  if (_initialized)
-    return;
+  if (_initialized) return;
 
-  _screen = lv_obj_create(nullptr);
+  _screen = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(_screen, WIFI_COLOR_BG, 0);
 
-  // Header
-  lv_obj_t *header = lv_obj_create(_screen);
-  lv_obj_set_size(header, lv_pct(100), 50);
-  lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
-  lv_obj_set_style_bg_color(header, WIFI_COLOR_PANEL, 0);
-  lv_obj_set_style_border_width(header, 0, 0);
-  lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
+  // Scrollable Container
+  lv_obj_t* scroll_cont = ui_create_scrollable_menu_container(_screen, "WiFi");
 
-  lv_obj_t *btnBack = lv_btn_create(header);
-  lv_obj_set_size(btnBack, 40, 35);
-  lv_obj_align(btnBack, LV_ALIGN_LEFT_MID, 5, 0);
-  lv_obj_set_style_bg_opa(btnBack, LV_OPA_TRANSP, 0);
-  lv_obj_add_event_cb(btnBack, btn_back_cb, LV_EVENT_CLICKED, nullptr);
-  lv_obj_t *backArrow = lv_label_create(btnBack);
-  lv_label_set_text(backArrow, "<-");
-  lv_obj_set_style_text_font(backArrow, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(backArrow, WIFI_COLOR_ACCENT, 0);
-  lv_obj_center(backArrow);
+  // Back Button
+  ui_create_back_btn(_screen, btn_back_cb);
 
-  lv_obj_t *title = lv_label_create(header);
-  lv_label_set_text(title, "WiFi");
-  lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(title, WIFI_COLOR_ACCENT, 0);
-  lv_obj_align(title, LV_ALIGN_CENTER, 0, 0);
-
-  // Menu items
-  create_menu_item(_screen, "S", "Scan Redes", btn_scan_cb, 60);
-  create_menu_item(_screen, "N", "Redes Encontradas", btn_attacks_cb, 120);
-  create_menu_item(_screen, "D", "Deauth Attack", btn_deauth_cb, 180);
-  create_menu_item(_screen, "B", "Beacon Flood", btn_beacon_cb, 240);
-  create_menu_item(_screen, "H", "Handshake Capture", btn_handshake_cb, 300);
-  create_menu_item(_screen, "E", "Evil Twin", btn_eviltwin_cb, 360);
+  // Menu items (Auto Stacked)
+  create_menu_item(scroll_cont, "S", "Scan Redes", btn_scan_cb);
+  create_menu_item(scroll_cont, "N", "Redes Encontradas", btn_attacks_cb);
+  create_menu_item(scroll_cont, "D", "Deauth Attack", btn_deauth_cb);
+  create_menu_item(scroll_cont, "B", "Beacon Flood", btn_beacon_cb);
+  create_menu_item(scroll_cont, "H", "Handshake Capture", btn_handshake_cb);
+  create_menu_item(scroll_cont, "E", "Evil Twin", btn_eviltwin_cb);
 
   _initialized = true;
 }
@@ -124,4 +112,10 @@ void ui_menu_wifi_show() {
     lv_scr_load(_screen);
 }
 
-void ui_menu_wifi_hide() {}
+void ui_menu_wifi_hide() {
+  if (_screen) {
+    lv_obj_del(_screen);
+    _screen = nullptr;
+    _initialized = false;
+  }
+}

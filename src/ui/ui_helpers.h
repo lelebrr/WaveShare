@@ -36,9 +36,13 @@ extern lv_style_t style_nav_btn;
 
 void ui_init_global_styles();
 
+// New Helper for Watch UI
+lv_obj_t* ui_create_scrollable_menu_container(lv_obj_t* parent, const char* title);
+
 /**
  * @brief Cria padrão de botão Back (Tip 7)
  * @param parent Parent object
+ * @param cb Callback on click
  * @param cb Callback on click
  */
 void ui_create_back_btn(lv_obj_t *parent, lv_event_cb_t cb);

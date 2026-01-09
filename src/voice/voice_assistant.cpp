@@ -248,7 +248,18 @@ void VoiceAssistant::speak(TTSMessage msg, int param) {
 }
 
 void VoiceAssistant::say(const char *text) {
-  // Placeholder
+  if (!text || strlen(text) == 0) return;
+  
+  _state = VOICE_SPEAKING;
+  mascot_manager.setTalking(true);
+  
+  // Use core 0 AI Manager to synthesize speech
+  // We use a default voice, e.g., "alloy" or "echo"
+  if (!aiManager.synthesizeSpeech(String(text), "fable")) {
+      // Fallback: Beep if TTS fails
+      generateBeep(800, 200);
+      generateBeep(600, 200);
+  }
 }
 
 void VoiceAssistant::enterDialogMode() {
@@ -314,7 +325,29 @@ void VoiceAssistant::triggerWakeWord() {
 }
 
 void VoiceAssistant::playTTS(TTSMessage msg, int param) {
-  // ttsPlayer.play((TTSSample)msg);
+  // Map enums to phrases for AiManager
+  String text = "";
+  switch (msg) {
+    case TTS_HELLO: text = "Greetings, user."; break;
+    case TTS_SCANNING: text = "Scanning for networks."; break;
+    case TTS_NETWORKS_FOUND: text = "Networks found."; break;
+    case TTS_ATTACK_STARTED: text = "Attack initiated."; break;
+    case TTS_ATTACK_STOPPED: text = "Attack stopped."; break;
+    case TTS_HANDSHAKE_CAPTURED: text = "Handshake captured!"; break;
+    case TTS_THREAT_ALERT: text = "Threat detected!"; break;
+    case TTS_STATUS_REPORT: text = "System operational."; break;
+    case TTS_LISTENING: text = "I am listening."; break;
+    case TTS_COMMAND_NOT_RECOGNIZED: text = "Command not understood."; break;
+    case TTS_OK: text = "Okay."; break;
+    case TTS_ERROR: text = "Error occurred."; break;
+    case TTS_BLE_STARTED: text = "Bluetooth Low Energy started."; break;
+    case TTS_GOODBYE: text = "Goodbye."; break;
+    case TTS_WAKE_WORD: text = "Yes?"; break;
+    default: return;
+  }
+  
+  // Use the dynamic TTS
+  say(text.c_str());
 }
 
 // Getters

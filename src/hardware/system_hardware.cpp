@@ -240,10 +240,31 @@ float SystemHardware::getBatteryVoltage() {
   return 0.0f;
 }
 
+// LiPo Discharge Curve LUT (Voltage values in mV for 0% to 100% in 10% steps)
+// 3.0V, 3.3V, 3.6V, 3.7V, 3.75V, 3.79V, 3.83V, 3.87V, 3.92V, 4.0V, 4.2V
+const uint32_t BATTERY_LUT[11] = {
+    3000, 3300, 3600, 3700, 3750, 3790, 3830, 3870, 3920, 4000, 4200
+};
+
+// Map voltage to percentage using LUT with interpolation
 int SystemHardware::getBatteryPercent() {
-  if (pmu_initialized)
-    return pmu.getBatteryPercent();
-  return 0;
+  if (!pmu_initialized) return 0;
+  
+  float voltage = getBatteryVoltage() * 1000.0f; // Convert to mV
+  // Clamp boundaries
+  if (voltage <= BATTERY_LUT[0]) return 0;
+  if (voltage >= BATTERY_LUT[10]) return 100;
+
+  for (int i = 0; i < 10; i++) {
+    if (voltage >= BATTERY_LUT[i] && voltage < BATTERY_LUT[i+1]) {
+      // Linear interpolation
+      float range = BATTERY_LUT[i+1] - BATTERY_LUT[i];
+      float diff = voltage - BATTERY_LUT[i];
+      float stepPercent = (diff / range) * 10.0f;
+      return (i * 10) + (int)stepPercent;
+    }
+  }
+  return 100; // Should be covered by clamp
 }
 
 int16_t SystemHardware::getBatteryCurrent() {

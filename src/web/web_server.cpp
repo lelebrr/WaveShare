@@ -27,8 +27,8 @@ WebInterface web_interface;
 
 WebInterface::WebInterface() : server(80), ws("/ws"), _lastUpdate(0) {}
 
-#include "../components/ir_remote/ir_blaster.h"
-#include "../components/ir_remote/ir_codes.h"
+#include "../components/ir_remote/ir_blaster.h" // Updated API
+#include "../components/ir_remote/ir_codes_db.h" // Correct path
 #include "../system/lan_turtle.h"
 #include "../voice/voice_recorder.h"
 
@@ -62,7 +62,13 @@ void WebInterface::begin() {
       return request->requestAuthentication();
     if (request->hasParam("name")) {
       String name = request->getParam("name")->value();
-      ir_send_by_name(name.c_str());
+      // Find code by name in DB and send
+      for (int i = 0; ir_code_database[i].name != nullptr; i++) {
+        if (name == ir_code_database[i].name) {
+          irBlaster.sendCode(ir_code_database[i]);
+          break;
+        }
+      }
       request->send(200, "text/plain", "OK");
     } else {
       request->send(400);
@@ -72,7 +78,7 @@ void WebInterface::begin() {
   server.on("/ir_nuke", HTTP_GET, [](AsyncWebServerRequest *request) {
     if (!request->authenticate(WEB_USER, WEB_PASS))
       return request->requestAuthentication();
-    ir_tv_nuke();
+    irBlaster.nuke(); // Updated API
     request->send(200, "text/plain", "TV NUKE executado!");
   });
 
@@ -81,15 +87,13 @@ void WebInterface::begin() {
       return request->requestAuthentication();
     AsyncResponseStream *response =
         request->beginResponseStream("application/json");
-    DynamicJsonDocument doc(4096);
-    JsonArray arr = doc.createNestedArray("codes");
 
     response->print("[");
-    for (int i = 0; popular_codes[i].name; i++) {
+    for (int i = 0; ir_code_database[i].name != nullptr; i++) { // Updated to new DB
       if (i > 0)
         response->print(",");
       response->print("{\"name\":\"");
-      response->print(popular_codes[i].name);
+      response->print(ir_code_database[i].name);
       response->print("\"}");
     }
     response->print("]");
@@ -157,14 +161,17 @@ void WebInterface::setupRoutes() {
                       "}");
   });
 
+#include "web_assets.h"
+
   // Serve static assets with cache headers
-  server.serveStatic("/", LittleFS, "/www/")
-      .setDefaultFile("index.html")
-      .setCacheControl("max-age=3600")
-      .setAuthentication(WEB_USER, WEB_PASS);
+  // server.serveStatic("/", LittleFS, "/www/")
+  //     .setDefaultFile("index.html")
+  //     .setCacheControl("max-age=3600")
+  //     .setAuthentication(WEB_USER, WEB_PASS);
 
   server.on("/", HTTP_GET, [](AsyncWebServerRequest *request) {
-    request->send(LittleFS, "/www/index.html", "text/html");
+    if (!request->authenticate(WEB_USER, WEB_PASS)) return request->requestAuthentication();
+    request->send_P(200, "text/html", WEB_APP_HTML);
   });
 
   // OTA Update POST

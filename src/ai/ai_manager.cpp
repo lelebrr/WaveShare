@@ -1,4 +1,5 @@
 #include "ai_manager.h"
+#include "../core/config.h"
 #include "../core/globals.h"
 #include "../hardware/audio_driver.h"
 #include <ArduinoJson.h>
@@ -31,9 +32,19 @@ void aiTaskFunction(void *pvParameters) {
   }
 }
 
-AiManager::AiManager() : _aiTaskHandle(NULL) {}
+AiManager::AiManager() : _aiTaskHandle(NULL), _apiKey(OPENAI_API_KEY) {}
 
 bool AiManager::begin() {
+  Serial.println("[AI] Initializing AI Manager...");
+  
+  // Load API key from config
+  if (String(_apiKey).startsWith("sk-YOUR")) {
+    Serial.println("[AI] WARNING: OpenAI API key not configured! TTS/STT will not work.");
+    Serial.println("[AI] Edit OPENAI_API_KEY in src/core/config.h");
+  } else {
+    Serial.println("[AI] OpenAI API key configured.");
+  }
+  
   // Tip 6: Inicializa TFLite na PSRAM
   if (!neura9.begin()) {
     Serial.println("[AI] FALHA ao iniciar NEURA9 TFLite!");
@@ -219,8 +230,130 @@ bool AiManager::synthesizeSpeech(String text, String voice) {
   return true;
 }
 
-String AiManager::transcribeAudio(const int16_t *audioData, size_t size) {
-  return "";
+String AiManager::transcribeAudio(const int16_t *audioData, size_t sampleCount) {
+  // Whisper API requires multipart/form-data with WAV file
+  // Audio format: 16kHz, 16-bit, mono
+  
+  if (sampleCount == 0 || !audioData) return "";
+  if (WiFi.status() != WL_CONNECTED) {
+    Serial.println("[AI] STT: No WiFi connection");
+    return "";
+  }
+  
+  Serial.printf("[AI] Transcribing %d samples via Whisper API...\n", sampleCount);
+  
+  // Build WAV header
+  size_t audioBytes = sampleCount * 2; // 16-bit samples
+  size_t wavSize = 44 + audioBytes;    // 44-byte header + data
+  
+  // WAV header structure
+  uint8_t wavHeader[44] = {
+    'R', 'I', 'F', 'F',                 // ChunkID
+    (uint8_t)(wavSize - 8), (uint8_t)((wavSize - 8) >> 8), 
+    (uint8_t)((wavSize - 8) >> 16), (uint8_t)((wavSize - 8) >> 24), // ChunkSize
+    'W', 'A', 'V', 'E',                 // Format
+    'f', 'm', 't', ' ',                 // Subchunk1ID
+    16, 0, 0, 0,                        // Subchunk1Size (16 for PCM)
+    1, 0,                               // AudioFormat (1 = PCM)
+    1, 0,                               // NumChannels (1 = mono)
+    0x80, 0x3E, 0, 0,                   // SampleRate (16000)
+    0x00, 0x7D, 0, 0,                   // ByteRate (16000 * 1 * 2 = 32000)
+    2, 0,                               // BlockAlign (NumChannels * BitsPerSample/8)
+    16, 0,                              // BitsPerSample
+    'd', 'a', 't', 'a',                 // Subchunk2ID
+    (uint8_t)audioBytes, (uint8_t)(audioBytes >> 8),
+    (uint8_t)(audioBytes >> 16), (uint8_t)(audioBytes >> 24) // Subchunk2Size
+  };
+  
+  // Multipart boundary
+  String boundary = "----ESP32WavePwnBoundary" + String(millis());
+  
+  // Build multipart body
+  String bodyStart = "--" + boundary + "\r\n";
+  bodyStart += "Content-Disposition: form-data; name=\"file\"; filename=\"audio.wav\"\r\n";
+  bodyStart += "Content-Type: audio/wav\r\n\r\n";
+  
+  String bodyModel = "\r\n--" + boundary + "\r\n";
+  bodyModel += "Content-Disposition: form-data; name=\"model\"\r\n\r\n";
+  bodyModel += "whisper-1";
+  
+  String bodyLanguage = "\r\n--" + boundary + "\r\n";
+  bodyLanguage += "Content-Disposition: form-data; name=\"language\"\r\n\r\n";
+  bodyLanguage += "pt"; // Portuguese
+  
+  String bodyEnd = "\r\n--" + boundary + "--\r\n";
+  
+  // Calculate total content length
+  size_t contentLength = bodyStart.length() + 44 + audioBytes + 
+                         bodyModel.length() + bodyLanguage.length() + bodyEnd.length();
+  
+  WiFiClientSecure *client = new WiFiClientSecure();
+  client->setInsecure();
+  
+  HTTPClient http;
+  http.begin(*client, "https://api.openai.com/v1/audio/transcriptions");
+  http.addHeader("Authorization", "Bearer " + _apiKey);
+  http.addHeader("Content-Type", "multipart/form-data; boundary=" + boundary);
+  http.addHeader("Content-Length", String(contentLength));
+  
+  // Build complete payload in chunks
+  // Note: For large audio, this should be streamed, but ESP32 has limited RAM
+  uint8_t* payload = (uint8_t*)ps_malloc(contentLength);
+  if (!payload) {
+    Serial.println("[AI] STT: Failed to allocate payload buffer");
+    delete client;
+    return "";
+  }
+  
+  size_t offset = 0;
+  
+  // Copy body start
+  memcpy(payload + offset, bodyStart.c_str(), bodyStart.length());
+  offset += bodyStart.length();
+  
+  // Copy WAV header
+  memcpy(payload + offset, wavHeader, 44);
+  offset += 44;
+  
+  // Copy audio data
+  memcpy(payload + offset, audioData, audioBytes);
+  offset += audioBytes;
+  
+  // Copy model field
+  memcpy(payload + offset, bodyModel.c_str(), bodyModel.length());
+  offset += bodyModel.length();
+  
+  // Copy language field
+  memcpy(payload + offset, bodyLanguage.c_str(), bodyLanguage.length());
+  offset += bodyLanguage.length();
+  
+  // Copy body end
+  memcpy(payload + offset, bodyEnd.c_str(), bodyEnd.length());
+  
+  // Send request
+  int httpCode = http.POST(payload, contentLength);
+  free(payload);
+  
+  String result = "";
+  
+  if (httpCode == HTTP_CODE_OK) {
+    String response = http.getString();
+    Serial.printf("[AI] Whisper response: %s\n", response.c_str());
+    
+    // Parse JSON response
+    DynamicJsonDocument doc(1024);
+    if (deserializeJson(doc, response) == DeserializationError::Ok) {
+      result = doc["text"].as<String>();
+      Serial.printf("[AI] Transcription: %s\n", result.c_str());
+    }
+  } else {
+    Serial.printf("[AI] Whisper error: %d - %s\n", httpCode, http.getString().c_str());
+  }
+  
+  http.end();
+  delete client;
+  
+  return result;
 }
 
 // Tip 27: OTA de modelo IA

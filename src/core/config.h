@@ -70,6 +70,16 @@
 // === AI DEBUG ===
 #define DEBUG_SAVE_RAW_FEATURES 1
 
+// === OPENAI API CONFIGURATION ===
+// Get your API key from: https://platform.openai.com/api-keys
+// SECURITY WARNING: Do not commit real keys to public repos!
+#define OPENAI_API_KEY "sk-YOUR-API-KEY-HERE"  // Replace with your key
+
+// TTS Voice options: alloy, echo, fable, onyx, nova, shimmer
+#define OPENAI_TTS_VOICE "nova"
+#define OPENAI_TTS_MODEL "tts-1"
+#define OPENAI_WHISPER_MODEL "whisper-1"
+
 // === COLORS (RGB565) ===
 #define COLOR_PRIMARY 0x07E0    // Green
 #define COLOR_SECONDARY 0x001F  // Blue

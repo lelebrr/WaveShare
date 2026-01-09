@@ -5,12 +5,12 @@
  */
 #pragma once
 
-#define BUILD_TIMESTAMP "2025-12-30 22:54:26"
-#define BUILD_GIT_HASH  "019553cad5d64fddce80c7dd5570f92295969cab"
+#define BUILD_TIMESTAMP "2026-01-09 01:56:33"
+#define BUILD_GIT_HASH  "b4428e5077fad055b281bdb6e5a3e17f314f8b08"
 #define BUILD_GIT_BRANCH "main"
 #define BUILD_COMPILER  "xtensa-esp32s3-elf-g++ (crosstool-NG esp-2021r2-patch5) 8.4.0"
-#define BUILD_BY        "Unknown User"
+#define BUILD_BY        "leleb"
 
 // Short hash (first 7 chars)
-#define BUILD_GIT_HASH_SHORT "019553c"
+#define BUILD_GIT_HASH_SHORT "b4428e5"
 

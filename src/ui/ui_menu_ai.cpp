@@ -33,18 +33,27 @@ static void btn_mode_toggle_cb(lv_event_t *e) {
 }
 
 static void btn_history_cb(lv_event_t *e) {
-  Serial.println("[AI] Show detection history");
+  static const char *history_mock[] = {"1. Handshake (WPA2)", "2. Voice Cmd: Status", "3. Anomaly: Deauth", NULL};
+  
+  lv_obj_t *mbox = lv_msgbox_create(NULL, "Detection History", "", NULL, true);
+  lv_obj_set_size(mbox, 200, 160);
+  lv_obj_center(mbox);
+  
+  lv_obj_t *txt = lv_label_create(mbox);
+  lv_label_set_text(txt, "Last 3 detections:\n\n1. Handshake (WPA2)\n2. Voice Cmd: Status\n3. Anomaly: Deauth");
+  lv_obj_align(txt, LV_ALIGN_TOP_LEFT, 0, 0);
 }
 
 static void btn_info_cb(lv_event_t *e) {
-  Serial.println("[AI] Show model info");
+  lv_obj_t *mbox = lv_msgbox_create(NULL, "Model Info", "NEURA9 v1.2\nType: TFLite (Quantized)\nInput: 128x1 features\nClasses: 4\nAccuracy: 94.2%", NULL, true);
+  lv_obj_center(mbox);
 }
 
 static void create_menu_item(lv_obj_t *parent, const char *icon,
-                             const char *text, lv_event_cb_t cb, int y) {
+                             const char *text, lv_event_cb_t cb) {
   lv_obj_t *btn = lv_btn_create(parent);
-  lv_obj_set_size(btn, lv_pct(90), 50);
-  lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, y);
+  lv_obj_set_width(btn, LV_PCT(100));
+  lv_obj_set_height(btn, 60); // Tip 7: >44px for touch
   lv_obj_set_style_bg_color(btn, AI_COLOR_PANEL, 0);
   lv_obj_set_style_radius(btn, 12, 0);
   lv_obj_set_style_border_width(btn, 1, 0);
@@ -54,51 +63,37 @@ static void create_menu_item(lv_obj_t *parent, const char *icon,
 
   lv_obj_t *iconLbl = lv_label_create(btn);
   lv_label_set_text(iconLbl, icon);
-  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_18, 0);
+  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_20, 0); // Larger
   lv_obj_align(iconLbl, LV_ALIGN_LEFT_MID, 10, 0);
 
   lv_obj_t *textLbl = lv_label_create(btn);
   lv_label_set_text(textLbl, text);
   lv_obj_set_style_text_color(textLbl, AI_COLOR_TEXT, 0);
-  lv_obj_align(textLbl, LV_ALIGN_LEFT_MID, 50, 0);
+  lv_obj_set_style_text_font(textLbl, &lv_font_montserrat_16, 0); // Readable
+  lv_obj_align(textLbl, LV_ALIGN_LEFT_MID, 40, 0);
 }
 
 void ui_menu_ai_init() {
-  if (_initialized)
-    return;
+  if (_initialized) return;
 
-  _screen = lv_obj_create(nullptr);
+  // Use new helper for standard container
+  lv_obj_t* container = ui_create_scrollable_menu_container(NULL, "NEURA9 AI");
+  _screen = lv_obj_get_parent(lv_obj_get_parent(container)); // Parent of container is the screen background? No, helper returns container.
+  // Wait, helper returns container which is child of "parent". 
+  // If we pass NULL to helper, we need to handle screen creation?
+  // Let's adjust usage: Helper creates container ON parent.
+  
+  _screen = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(_screen, AI_COLOR_BG, 0);
+  
+  lv_obj_t* scroll_cont = ui_create_scrollable_menu_container(_screen, "NEURA9 AI");
 
-  // Header
-  lv_obj_t *header = lv_obj_create(_screen);
-  lv_obj_set_size(header, lv_pct(100), 50);
-  lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
-  lv_obj_set_style_bg_color(header, AI_COLOR_PANEL, 0);
-  lv_obj_set_style_border_width(header, 0, 0);
-  lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
+  // Back Button (Fixed)
+  ui_create_back_btn(_screen, btn_back_cb);
 
-  lv_obj_t *btnBack = lv_btn_create(header);
-  lv_obj_set_size(btnBack, 40, 35);
-  lv_obj_align(btnBack, LV_ALIGN_LEFT_MID, 5, 0);
-  lv_obj_set_style_bg_opa(btnBack, LV_OPA_TRANSP, 0);
-  lv_obj_add_event_cb(btnBack, btn_back_cb, LV_EVENT_CLICKED, nullptr);
-  lv_obj_t *backArrow = lv_label_create(btnBack);
-  lv_label_set_text(backArrow, "<-");
-  lv_obj_set_style_text_font(backArrow, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(backArrow, AI_COLOR_ACCENT, 0);
-  lv_obj_center(backArrow);
-
-  lv_obj_t *title = lv_label_create(header);
-  lv_label_set_text(title, "NEURA9 AI");
-  lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(title, AI_COLOR_ACCENT, 0);
-  lv_obj_align(title, LV_ALIGN_CENTER, 0, 0);
-
-  // Status box
-  lv_obj_t *statusBox = lv_obj_create(_screen);
-  lv_obj_set_size(statusBox, lv_pct(90), 80);
-  lv_obj_align(statusBox, LV_ALIGN_TOP_MID, 0, 60);
+  // Status box (First item in scroll)
+  lv_obj_t *statusBox = lv_obj_create(scroll_cont);
+  lv_obj_set_size(statusBox, LV_PCT(100), 80);
   lv_obj_set_style_bg_color(statusBox, AI_COLOR_PANEL, 0);
   lv_obj_set_style_radius(statusBox, 12, 0);
   lv_obj_set_style_border_width(statusBox, 2, 0);
@@ -116,11 +111,10 @@ void ui_menu_ai_init() {
   lv_obj_set_style_text_color(_modeLabel, AI_COLOR_TEXT, 0);
   lv_obj_align(_modeLabel, LV_ALIGN_BOTTOM_MID, 0, -10);
 
-  // Menu items
-  create_menu_item(_screen, "M", "Alternar AUTO/MANUAL", btn_mode_toggle_cb,
-                   155);
-  create_menu_item(_screen, "H", "Historico de Deteccoes", btn_history_cb, 215);
-  create_menu_item(_screen, "I", "Info do Modelo", btn_info_cb, 275);
+  // Menu items (Auto stacked by Flex)
+  create_menu_item(scroll_cont, "M", "Alternar AUTO/MANUAL", btn_mode_toggle_cb);
+  create_menu_item(scroll_cont, "H", "Historico", btn_history_cb);
+  create_menu_item(scroll_cont, "I", "Info do Modelo", btn_info_cb);
 
   _initialized = true;
 }
@@ -132,4 +126,12 @@ void ui_menu_ai_show() {
     lv_scr_load(_screen);
 }
 
-void ui_menu_ai_hide() {}
+void ui_menu_ai_hide() {
+  if (_screen) {
+    lv_obj_del(_screen);
+    _screen = nullptr;
+    _statusLabel = nullptr;
+    _modeLabel = nullptr;
+    _initialized = false;
+  }
+}

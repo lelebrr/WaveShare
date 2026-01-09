@@ -74,9 +74,9 @@ void ui_create_3_zone_layout(lv_obj_t *parent, lv_obj_t **content_area) {
   // Criado externamente pelo status_bar.cpp, mas reservamos o espaço
   // O content area começa em y=40
 
-  // 2. Navigation Bar (Fixed Bottom 40px)
+  // 2. Navigation Bar (Fixed Bottom 60px) - Increased for touch
   lv_obj_t *nav_bar = lv_obj_create(parent);
-  lv_obj_set_size(nav_bar, LCD_WIDTH, NAV_BAR_HEIGHT);
+  lv_obj_set_size(nav_bar, LCD_WIDTH, 60); // was NAV_BAR_HEIGHT (40)
   lv_obj_align(nav_bar, LV_ALIGN_BOTTOM_MID, 0, 0);
   lv_obj_set_style_bg_color(nav_bar, getTheme().panel, 0);
   lv_obj_set_style_bg_opa(nav_bar, LV_OPA_COVER, 0);
@@ -96,7 +96,7 @@ void ui_create_3_zone_layout(lv_obj_t *parent, lv_obj_t **content_area) {
 
   for (int i = 0; i < 5; i++) {
     lv_obj_t *btn = lv_btn_create(nav_bar);
-    lv_obj_set_size(btn, 64, 36); // Maximize touch area within 40px height
+    lv_obj_set_size(btn, 64, 50); // Maximize touch area within 60px height
     lv_obj_add_style(btn, &style_nav_btn, 0);
     lv_obj_add_style(btn, &style_nav_btn, LV_STATE_DEFAULT);
 
@@ -142,7 +142,7 @@ void ui_create_3_zone_layout(lv_obj_t *parent, lv_obj_t **content_area) {
 
 void ui_create_back_btn(lv_obj_t *parent, lv_event_cb_t cb) {
   lv_obj_t *btn = lv_btn_create(parent);
-  lv_obj_set_size(btn, 32, 32);               // Tip 7: 32x32px
+  lv_obj_set_size(btn, 60, 60);               // Larger target (Tip 7) - Up from 40
   lv_obj_align(btn, LV_ALIGN_TOP_LEFT, 5, 5); // Corner padding
   lv_obj_set_style_bg_opa(btn, LV_OPA_TRANSP, 0);
   lv_obj_set_style_shadow_width(btn, 0, 0);
@@ -154,4 +154,42 @@ void ui_create_back_btn(lv_obj_t *parent, lv_event_cb_t cb) {
                              0); // Sufficient for icon
   lv_obj_set_style_text_color(lbl, COLOR_NEON_BLUE, 0);
   lv_obj_center(lbl);
+}
+
+lv_obj_t* ui_create_scrollable_menu_container(lv_obj_t* parent, const char* title) {
+    // 1. Full screen background
+    lv_obj_t* container = lv_obj_create(parent);
+    lv_obj_set_size(container, LV_PCT(100), LV_PCT(100));
+    lv_obj_set_style_bg_color(container, lv_color_hex(0x0a0a1a), 0);
+    lv_obj_set_style_pad_all(container, 10, 0); // Padding around content
+    lv_obj_set_style_pad_top(container, 50, 0); // Space for header
+    
+    // Enable Scrolling
+    lv_obj_add_flag(container, LV_OBJ_FLAG_SCROLLABLE);
+    lv_obj_set_scrollbar_mode(container, LV_SCROLLBAR_MODE_AUTO);
+    
+    // Flex Layout (Column)
+    lv_obj_set_flex_flow(container, LV_FLEX_FLOW_COLUMN);
+    lv_obj_set_flex_align(container, LV_FLEX_ALIGN_START, LV_FLEX_ALIGN_CENTER, LV_FLEX_ALIGN_CENTER);
+    lv_obj_set_style_border_width(container, 0, 0);
+
+    // 2. Fixed Header (Floating)
+    lv_obj_t *header = lv_obj_create(parent); // Child of parent, not container, to stay fixed
+    lv_obj_set_size(header, LV_PCT(100), 50);
+    lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
+    lv_obj_set_style_bg_color(header, lv_color_hex(0x12122a), 0);
+    lv_obj_set_style_bg_opa(header, LV_OPA_COVER, 0);
+    lv_obj_set_style_border_width(header, 0, 0);
+    lv_obj_set_style_shadow_width(header, 10, 0);
+    lv_obj_set_style_shadow_color(header, lv_color_black(), 0);
+    lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
+
+    // Title
+    lv_obj_t *lbl_title = lv_label_create(header);
+    lv_label_set_text(lbl_title, title);
+    lv_obj_set_style_text_font(lbl_title, &lv_font_montserrat_20, 0); // Larger font
+    lv_obj_set_style_text_color(lbl_title, COLOR_NEON_GREEN, 0);
+    lv_obj_align(lbl_title, LV_ALIGN_CENTER, 0, 0);
+    
+    return container;
 }

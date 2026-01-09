@@ -46,10 +46,10 @@ static void btn_commands_cb(lv_event_t *e) {
 }
 
 static void create_menu_item(lv_obj_t *parent, const char *icon,
-                             const char *text, lv_event_cb_t cb, int y) {
+                             const char *text, lv_event_cb_t cb) {
   lv_obj_t *btn = lv_btn_create(parent);
-  lv_obj_set_size(btn, lv_pct(90), 50);
-  lv_obj_align(btn, LV_ALIGN_TOP_MID, 0, y);
+  lv_obj_set_width(btn, LV_PCT(100)); // Full width
+  lv_obj_set_height(btn, 60);
   lv_obj_set_style_bg_color(btn, VOICE_COLOR_PANEL, 0);
   lv_obj_set_style_radius(btn, 12, 0);
   lv_obj_set_style_border_width(btn, 1, 0);
@@ -59,64 +59,50 @@ static void create_menu_item(lv_obj_t *parent, const char *icon,
 
   lv_obj_t *iconLbl = lv_label_create(btn);
   lv_label_set_text(iconLbl, icon);
-  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_18, 0);
+  lv_obj_set_style_text_font(iconLbl, &lv_font_montserrat_20, 0);
   lv_obj_align(iconLbl, LV_ALIGN_LEFT_MID, 10, 0);
 
   lv_obj_t *textLbl = lv_label_create(btn);
   lv_label_set_text(textLbl, text);
   lv_obj_set_style_text_color(textLbl, VOICE_COLOR_TEXT, 0);
+  lv_obj_set_style_text_font(textLbl, &lv_font_montserrat_16, 0);
   lv_obj_align(textLbl, LV_ALIGN_LEFT_MID, 50, 0);
 }
 
 void ui_menu_voice_init() {
-  if (_initialized)
-    return;
+  if (_initialized) return;
 
-  _screen = lv_obj_create(nullptr);
+  _screen = lv_obj_create(NULL);
   lv_obj_set_style_bg_color(_screen, VOICE_COLOR_BG, 0);
 
-  // Header
-  lv_obj_t *header = lv_obj_create(_screen);
-  lv_obj_set_size(header, lv_pct(100), 50);
-  lv_obj_align(header, LV_ALIGN_TOP_MID, 0, 0);
-  lv_obj_set_style_bg_color(header, VOICE_COLOR_PANEL, 0);
-  lv_obj_set_style_border_width(header, 0, 0);
-  lv_obj_clear_flag(header, LV_OBJ_FLAG_SCROLLABLE);
+  // Scrollable
+  lv_obj_t* cont = ui_create_scrollable_menu_container(_screen, "🎤 Assistente");
 
-  lv_obj_t *btnBack = lv_btn_create(header);
-  lv_obj_set_size(btnBack, 40, 35);
-  lv_obj_align(btnBack, LV_ALIGN_LEFT_MID, 5, 0);
-  lv_obj_set_style_bg_opa(btnBack, LV_OPA_TRANSP, 0);
-  lv_obj_add_event_cb(btnBack, btn_back_cb, LV_EVENT_CLICKED, nullptr);
-  lv_obj_t *backArrow = lv_label_create(btnBack);
-  lv_label_set_text(backArrow, "←");
-  lv_obj_set_style_text_font(backArrow, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(backArrow, VOICE_COLOR_ACCENT, 0);
-  lv_obj_center(backArrow);
+  // Back
+  ui_create_back_btn(_screen, btn_back_cb);
 
-  lv_obj_t *title = lv_label_create(header);
-  lv_label_set_text(title, "🎤 Assistente");
-  lv_obj_set_style_text_font(title, &lv_font_montserrat_18, 0);
-  lv_obj_set_style_text_color(title, VOICE_COLOR_ACCENT, 0);
-  lv_obj_align(title, LV_ALIGN_CENTER, 0, 0);
-
-  // Status label
-  _statusLabel = lv_label_create(_screen);
+  // Status label (In scroll)
+  _statusLabel = lv_label_create(cont);
   lv_label_set_text(_statusLabel, g_state.voice_enabled
                                       ? "🎤 Assistente ATIVO"
                                       : "🔇 Assistente INATIVO");
   lv_obj_set_style_text_font(_statusLabel, &lv_font_montserrat_16, 0);
   lv_obj_set_style_text_color(_statusLabel, lv_color_hex(0xffffff), 0);
-  lv_obj_align(_statusLabel, LV_ALIGN_TOP_MID, 0, 70);
+  // Center alignment for status/toggle
+  lv_obj_set_style_align(_statusLabel, LV_ALIGN_CENTER, 0); 
+  // In Flex layout, align works differently. we need to align self.
+  lv_obj_set_align(_statusLabel, LV_ALIGN_CENTER);
 
   // Botão toggle grande
-  _toggleBtn = lv_btn_create(_screen);
-  lv_obj_set_size(_toggleBtn, lv_pct(80), 60);
-  lv_obj_align(_toggleBtn, LV_ALIGN_TOP_MID, 0, 100);
+  _toggleBtn = lv_btn_create(cont);
+  lv_obj_set_width(_toggleBtn, LV_PCT(80));
+  lv_obj_set_height(_toggleBtn, 60);
   lv_obj_set_style_bg_color(
       _toggleBtn, g_state.voice_enabled ? VOICE_COLOR_ON : VOICE_COLOR_OFF, 0);
   lv_obj_set_style_radius(_toggleBtn, 30, 0);
   lv_obj_add_event_cb(_toggleBtn, btn_toggle_cb, LV_EVENT_CLICKED, nullptr);
+  // Center in flex
+  lv_obj_set_align(_toggleBtn, LV_ALIGN_CENTER);
 
   lv_obj_t *toggleLabel = lv_label_create(_toggleBtn);
   lv_label_set_text(toggleLabel, "ATIVAR / DESATIVAR");
@@ -124,14 +110,17 @@ void ui_menu_voice_init() {
   lv_obj_center(toggleLabel);
 
   // Info
-  lv_obj_t *info = lv_label_create(_screen);
+  lv_obj_t *info = lv_label_create(cont);
   lv_label_set_text(info, "Wake word: \"Hey Dragon\"");
   lv_obj_set_style_text_color(info, VOICE_COLOR_TEXT, 0);
-  lv_obj_align(info, LV_ALIGN_TOP_MID, 0, 175);
+  lv_obj_set_align(info, LV_ALIGN_CENTER);
+  
+  // Spacing
+  lv_obj_set_style_pad_bottom(info, 20, 0);
 
   // Outros botões
-  create_menu_item(_screen, "🔊", "Testar Voz", btn_test_cb, 210);
-  create_menu_item(_screen, "📋", "Lista de Comandos", btn_commands_cb, 270);
+  create_menu_item(cont, "🔊", "Testar Voz", btn_test_cb);
+  create_menu_item(cont, "📋", "Lista de Comandos", btn_commands_cb);
 
   _initialized = true;
 }

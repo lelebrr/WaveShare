@@ -1,448 +1,197 @@
 #pragma once
+#include <Arduino.h>
 
-const char PROGMEM INDEX_HTML[] = R"rawliteral(
+const char WEB_APP_HTML[] PROGMEM = R"rawliteral(
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>WavePwn Dashboard</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="icon" type="image/x-icon" href="favicon.ico">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <title>WaveShare Dashboard</title>
+    <style>
+        :root { --bg: #0a0a0a; --panel: #141414; --accent: #00ff88; --text: #e0e0e0; }
+        body { margin: 0; font-family: 'Courier New', monospace; background: var(--bg); color: var(--text); }
+        .container { display: flex; height: 100vh; flex-direction: column; }
+        header { background: var(--panel); padding: 1rem; border-bottom: 1px solid var(--accent); display: flex; justify-content: space-between; }
+        .tabs { display: flex; overflow-x: auto; background: #222; }
+        .tab { padding: 1rem; cursor: pointer; border-right: 1px solid #333; flex-grow: 1; text-align: center; }
+        .tab.active { background: var(--accent); color: #000; font-weight: bold; }
+        .content { flex-grow: 1; padding: 1rem; overflow-y: auto; display: none; }
+        .content.active { display: block; }
+        .card { background: var(--panel); border: 1px solid #333; padding: 1.5rem; margin-bottom: 1.5rem; border-radius: 8px; }
+        h2 { border-bottom: 1px solid var(--accent); padding-bottom: 0.5rem; margin-top: 0; font-size: 1.5rem; }
+        button { background: var(--accent); color: #000; border: none; padding: 1rem 1.5rem; font-weight: bold; cursor: pointer; margin-right: 0.5rem; font-size: 1.1rem; border-radius: 4px; touch-action: manipulation; }
+        button.red { background: #ff3333; color: white; }
+        input[type="text"] { padding: 0.8rem; background: #333; border: 1px solid #555; color: white; width: 70%; font-size: 1.1rem; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 1.5rem; }
+        
+        #console { background: #000; height: 200px; overflow-y: auto; padding: 0.5rem; font-size: 0.8rem; border-top: 1px solid #333; }
+        .log-entry { margin: 2px 0; }
+        .log-time { color: #666; margin-right: 5px; }
+    </style>
 </head>
 <body>
-    <header>
-        <div class="logo">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l3 9 4-17 5 8h3"/></svg>
-            WavePwn <span style="font-weight: 400; font-size: 0.8em; opacity: 0.7;">v2.1</span>
-        </div>
-        <nav>
-            <a href="/" class="nav-link active">Dashboard</a>
-            <a href="/config.html" class="nav-link">Configuração</a>
-            <a href="/ota/update.html" class="nav-link">Atualizar</a>
-        </nav>
-        <div class="status-indicator" id="status-dot"></div>
-    </header>
-
-    <div class="app-container">
-        <!-- Status Grid -->
-        <div class="grid">
-            <div class="card">
-                <h3>Ameaça Atual</h3>
-                <div class="stat-value" id="threat-label">Analisando...</div>
-                <div class="stat-sub">Confiança: <span id="threat-conf">0%</span></div>
-            </div>
-            <div class="card">
-                <h3>Redes (APs)</h3>
-                <div class="stat-value" id="ap-count">0</div>
-                <div class="stat-sub">Visíveis</div>
-            </div>
-            <div class="card">
-                <h3>Handshakes</h3>
-                <div class="stat-value" id="hs-count">0</div>
-                <div class="stat-sub" id="pmkid-count">0 PMKIDs</div>
-            </div>
-            <div class="card">
-                <h3>Sistema</h3>
-                <div class="stat-value" id="battery">0%</div>
-                <div class="stat-sub" id="uptime">00:00:00</div>
-            </div>
+    <div class="container">
+        <header>
+            <div>WAVESHARE <span style="font-size:0.8rem">v2.0</span></div>
+            <div id="status">Disconnected</div>
+        </header>
+        
+        <div class="tabs">
+            <div class="tab active" onclick="showTab('dash')">DASHBOARD</div>
+            <div class="tab" onclick="showTab('wifi')">WIFI</div>
+            <div class="tab" onclick="showTab('ble')">BLE</div>
+            <div class="tab" onclick="showTab('ir')">IR</div>
+            <div class="tab" onclick="showTab('tools')">TOOLS</div>
         </div>
 
-        <!-- Main Content -->
-        <div class="grid" style="grid-template-columns: 2fr 1fr;">
-            <!-- Chart -->
-            <div class="card">
-                <h3>Sinais de Atividade (2.4GHz / 5GHz)</h3>
-                <div style="height: 300px; position: relative;">
-                    <canvas id="signalChart"></canvas>
+        <!-- DASHBOARD -->
+        <div id="dash" class="content active">
+            <div class="grid">
+                <div class="card">
+                    <h3>NETWORKS</h3>
+                    <div id="stat_networks" style="font-size: 2rem; color: var(--accent)">0</div>
+                </div>
+                <div class="card">
+                    <h3>HANDSHAKES</h3>
+                    <div id="stat_handshakes" style="font-size: 2rem; color: #ffcc00">0</div>
+                </div>
+                <div class="card">
+                    <h3>BATTERY</h3>
+                    <div id="stat_battery" style="font-size: 2rem;">--%</div>
                 </div>
             </div>
-
-            <!-- Attack Controls -->
             <div class="card">
-                <h3>Central de Ataques</h3>
-                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; margin-top: 1rem;">
-                     <button class="danger" onclick="startAttack('deauth')">Deauth Flood</button>
-                     <button class="warning" onclick="startAttack('beacon')">Beacon Flood</button>
-                     <button class="primary" onclick="startAttack('handshake')">Handshake Search</button>
-                     <button class="secondary" onclick="stopAttacks()">PARAR TUDO</button>
-                </div>
-            </div>
-
-            <!-- Quick Actions -->
-            <div class="card">
-                <h3>Ações Rápidas</h3>
-                <div style="display: flex; flex-direction: column; gap: 1rem; margin-top: 1rem;">
-                    <button onclick="rebootDevice()">Reiniciar Dispositivo</button>
-                    <button class="secondary" onclick="clearLogs()">Limpar Logs</button>
-                </div>
-            </div>
-
-            <!-- Console -->
-            <div class="card console-card">
-                <div style="display: flex; justify-content: space-between; padding-bottom: 0.5rem; border-bottom: 1px solid #333;">
-                    <h3>Console do Sistema</h3>
-                    <span style="color: #666; font-size: 0.7rem;">LIVE</span>
-                </div>
-                <div class="console-output" id="console-logs">
-                    <!-- Logs will appear here -->
-                    <div class="log-line"><span class="log-time">[SYSTEM]</span> Conectando ao WebSocket...</div>
-                </div>
+                <h3>SYSTEM</h3>
+                <div id="sys_info">Loading...</div>
+                <br>
+                <button onclick="apiCall('/api/stop', 'POST')">STOP ALL ATTACKS</button>
             </div>
         </div>
+
+        <!-- WIFI -->
+        <div id="wifi" class="content">
+            <div class="card">
+                <h2>WiFi Manager</h2>
+                <button onclick="apiCall('/api/scan')">SCAN NETWORKS</button>
+                <button class="red" onclick="apiCall('/api/deauth?channel=0', 'POST')">DEAUTH ALL</button>
+                <button onclick="apiCall('/api/handshake', 'POST')">HANDSHAKE CAPTURE</button>
+            </div>
+            <div id="wifi_list" class="grid"></div>
+        </div>
+
+        <!-- BLE -->
+        <div id="ble" class="content">
+            <div class="card">
+                <h2>BLE Chaos</h2>
+                <button onclick="apiCall('/api/ble/spam?type=4', 'POST')">START SPAM (ALL)</button>
+                <button class="red" onclick="apiCall('/api/ble/stop', 'POST')">STOP SPAM</button>
+            </div>
+            <div id="ble_list"></div>
+        </div>
+
+        <!-- IR -->
+        <div id="ir" class="content">
+            <div class="card">
+                <h2>IR Blaster</h2>
+                <div style="margin-bottom: 10px;">
+                    <button class="red" style="width:100%" onclick="apiCall('/ir_nuke')">☢ TV NUKE ☢</button>
+                </div>
+                <h3>Remote Codes</h3>
+                <div id="ir_grid" class="grid"></div>
+            </div>
+            <div class="card">
+                <h2>Cloner/Learn</h2>
+                <input type="text" id="learn_name" placeholder="Remote Name">
+                <button onclick="learnIR()">START LEARNING</button>
+            </div>
+        </div>
+
+        <!-- TOOLS -->
+        <div id="tools" class="content">
+             <div class="card">
+                <h2>Terminal</h2>
+                <input type="text" id="cmd_input" placeholder="Command...">
+                <button onclick="sendCmd()">SEND</button>
+            </div>
+        </div>
+
+        <div id="console"></div>
     </div>
 
     <script>
-        // WebSocket Connection
-        let ws;
-        const statusDot = document.getElementById('status-dot');
-        const consoleLogs = document.getElementById('console-logs');
-
-        function connectWS() {
-            const proto = window.location.protocol === 'https:' ? 'wss' : 'ws';
-            ws = new WebSocket(`${proto}://${window.location.hostname}/ws`);
-
-            ws.onopen = () => {
-                log('WS', 'Conectado ao dispositivo');
-                statusDot.style.backgroundColor = '#22c55e';
-                statusDot.style.boxShadow = '0 0 10px #22c55e';
-            };
-
-            ws.onclose = () => {
-                log('WS', 'Desconectado. Tentando reconectar...');
-                statusDot.style.backgroundColor = '#ef4444';
-                statusDot.style.boxShadow = 'none';
-                setTimeout(connectWS, 2000);
-            };
-
-            ws.onmessage = (event) => {
-                try {
-                    const data = JSON.parse(event.data);
-                    updateDashboard(data);
-                } catch (e) {
-                    // Ignore JSON errors
-                }
-            };
+        function showTab(id) {
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            event.target.classList.add('active');
+            if(id === 'ir') loadIRCodes();
+            if(id === 'wifi') loadWiFi();
         }
 
-        function updateDashboard(data) {
-            // Update Stats
-            if(data.uptime) document.getElementById('uptime').innerText = formatUptime(data.uptime);
-            if(data.battery) document.getElementById('battery').innerText = data.battery + '%';
-            if(data.aps) document.getElementById('ap-count').innerText = data.aps;
-            if(data.hs) document.getElementById('hs-count').innerText = data.hs;
-            if(data.pmkid) document.getElementById('pmkid-count').innerText = data.pmkid + ' PMKIDs';
-            
-            if(data.ai) {
-                const el = document.getElementById('threat-label');
-                el.innerText = data.ai;
-                // Simple color coding
-                if(data.ai === 'SAFE') el.style.color = '#22c55e';
-                else if(data.ai === 'EAPOL') el.style.color = '#f59e0b';
-                else if(data.ai === 'DEAUTH') el.style.color = '#ef4444';
-                else el.style.color = '#3b82f6';
-            }
-
-            // Log
-            if(data.log && data.log.trim() !== '') {
-                log('SYS', data.log);
-            }
+        function log(msg) {
+            const div = document.createElement('div');
+            div.className = 'log-entry';
+            div.innerHTML = `<span class="log-time">[${new Date().toLocaleTimeString()}]</span> ${msg}`;
+            const c = document.getElementById('console');
+            c.appendChild(div);
+            c.scrollTop = c.scrollHeight;
         }
 
-        function formatUptime(seconds) {
-            const h = Math.floor(seconds / 3600);
-            const m = Math.floor((seconds % 3600) / 60);
-            const s = seconds % 60;
-            return `${h.toString().padStart(2,'0')}:${m.toString().padStart(2,'0')}:${s.toString().padStart(2,'0')}`;
+        function apiCall(endpoint, method='GET') {
+            log(`${method} ${endpoint}...`);
+            fetch(endpoint, { method: method })
+                .then(r => r.text())
+                .then(t => log(`Response: ${t}`))
+                .catch(e => log(`Error: ${e}`));
         }
 
-        function log(source, msg) {
-            const time = new Date().toLocaleTimeString();
-            const line = document.createElement('div');
-            line.className = 'log-line';
-            line.innerHTML = `<span class="log-time">[${time}]</span> <span style="color: #cbd5e1">${msg}</span>`;
-            consoleLogs.insertBefore(line, consoleLogs.firstChild);
-            if(consoleLogs.children.length > 100) {
-                consoleLogs.removeChild(consoleLogs.lastChild);
-            }
-        }
-
-        function clearLogs() {
-            consoleLogs.innerHTML = '';
-        }
-
-        function rebootDevice() {
-            if(confirm('Tem certeza que deseja reiniciar o dispositivo?')) {
-                fetch('/api/reboot', { method: 'POST' }).then(() => {
-                    alert('Reiniciando... Aguarde alguns segundos.');
-                    setTimeout(() => window.location.reload(), 5000);
+        function loadIRCodes() {
+            fetch('/ir_list').then(r => r.json()).then(data => {
+                const grid = document.getElementById('ir_grid');
+                grid.innerHTML = '';
+                data.codes.forEach(c => {
+                    const btn = document.createElement('button');
+                    btn.innerText = c.name;
+                    btn.onclick = () => apiCall(`/ir_send?name=${encodeURIComponent(c.name)}`);
+                    grid.appendChild(btn);
                 });
-            }
+            });
         }
-
-        function startAttack(type) {
-             fetch('/api/attack/start?type=' + type, { method: 'POST' })
-                .then(r => r.json())
-                .then(d => {
-                    if(d.success) log('ATK', 'Ataque iniciado: ' + type);
-                    else log('ATK', 'Falha ao iniciar: ' + d.msg);
-                });
-        }
-
-        function stopAttacks() {
-             fetch('/api/stop', { method: 'POST' });
-        }
-
-        // Initialize Chart
-        try {
-            const ctx = document.getElementById('signalChart').getContext('2d');
-            const signalChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: Array(20).fill(''),
-                    datasets: [{
-                        label: 'Atividade WiFi',
-                        data: Array(20).fill(0),
-                        borderColor: '#3b82f6',
-                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                        tension: 0.4,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: { display: false }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: { color: 'rgba(255,255,255,0.05)' },
-                            ticks: { color: '#94a3b8' }
-                        },
-                        x: {
-                            grid: { display: false }
-                        }
-                    },
-                    animation: { duration: 0 }
+        
+        function loadWiFi() {
+             fetch('/api/networks').then(r => r.json()).then(data => {
+                const list = document.getElementById('wifi_list');
+                list.innerHTML = '';
+                if(data.networks) {
+                    data.networks.forEach(n => {
+                        const card = document.createElement('div');
+                        card.className = 'card';
+                        card.innerHTML = `<b>${n.ssid}</b><br>CH ${n.channel} | ${n.rssi}dBm`;
+                        list.appendChild(card);
+                    });
                 }
             });
-
-            // Mock chart animation
-            setInterval(() => {
-                const data = signalChart.data.datasets[0].data;
-                data.shift();
-                data.push(Math.floor(Math.random() * 50) + 10); // Random activity
-                signalChart.update();
-            }, 1000);
-        } catch(e) {
-            console.log("Chart not loaded (offline)");
         }
 
-        // Start
-        connectWS();
-    </script>
-</body>
-</html>
-)rawliteral";
-
-const char PROGMEM STYLE_CSS[] = R"rawliteral(
-:root {
-    --bg-color: #0f172a;
-    --surface-color: #1e293b;
-    --primary-color: #3b82f6;
-    --primary-hover: #2563eb;
-    --accent-color: #8b5cf6;
-    --text-primary: #f8fafc;
-    --text-secondary: #94a3b8;
-    --success-color: #10b981;
-    --warning-color: #f59e0b;
-    --danger-color: #ef4444;
-    --border-radius: 12px;
-    --transition: all 0.3s ease;
-    --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-    --glass: rgba(30, 41, 59, 0.7);
-}
-
-* { box-sizing: border-box; margin: 0; padding: 0; }
-
-body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-color);
-    color: var(--text-primary);
-    line-height: 1.6;
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-}
-
-h1, h2, h3 { font-weight: 700; margin-bottom: 1rem; }
-h3 { font-size: 0.875rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
-
-.app-container { max-width: 1200px; margin: 0 auto; padding: 1.5rem; width: 100%; }
-
-header {
-    display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 2rem; padding: 1rem;
-    background: var(--surface-color); border-radius: var(--border-radius);
-    box-shadow: var(--shadow); border: 1px solid rgba(255, 255, 255, 0.05);
-}
-
-.logo {
-    display: flex; align-items: center; gap: 0.75rem;
-    font-size: 1.25rem; font-weight: 800;
-    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-}
-
-nav { display: flex; gap: 1rem; }
-.nav-link { color: var(--text-secondary); text-decoration: none; font-weight: 600; padding: 0.5rem 1rem; border-radius: 0.5rem; transition: var(--transition); }
-.nav-link:hover, .nav-link.active { background: rgba(59, 130, 246, 0.1); color: var(--primary-color); }
-
-.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
-
-.card {
-    background: var(--surface-color); border-radius: var(--border-radius);
-    padding: 1.5rem; box-shadow: var(--shadow);
-    border: 1px solid rgba(255, 255, 255, 0.05); transition: var(--transition);
-}
-.stat-value { font-size: 2rem; font-weight: 800; color: var(--text-primary); }
-.stat-sub { font-size: 0.875rem; color: var(--text-secondary); }
-
-.status-indicator { width: 10px; height: 10px; border-radius: 50%; background-color: var(--success-color); animation: pulse 2s infinite; }
-@keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
-
-.console-card { background: #000; font-family: 'Fira Code', monospace; }
-.console-output { height: 300px; overflow-y: auto; padding: 1rem; color: #22c55e; font-size: 0.875rem; display: flex; flex-direction: column; }
-.log-line { margin-bottom: 0.25rem; word-break: break-all; }
-.log-time { color: #64748b; margin-right: 0.5rem; }
-
-button { cursor: pointer; background: var(--primary-color); color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0.5rem; font-weight: 600; transition: var(--transition); }
-button:hover { background: var(--primary-hover); transform: translateY(-1px); }
-button.secondary { background: transparent; border: 1px solid rgba(255, 255, 255, 0.1); }
-button.danger { background: var(--danger-color); }
-
-button.warning { background: var(--warning-color); color: #000; }
-
-.form-group { margin-bottom: 1rem; }
-.form-group label { display: block; margin-bottom: 0.5rem; color: var(--text-secondary); }
-.form-group input, .form-group select {
-    width: 100%; padding: 0.75rem; border-radius: 0.5rem;
-    background: rgba(0,0,0,0.2); border: 1px solid rgba(255,255,255,0.1);
-    color: white; font-family: inherit;
-}
-.form-group input:focus, .form-group select:focus {
-    outline: none; border-color: var(--primary-color);
-}
-
-@media (max-width: 640px) { .grid { grid-template-columns: 1fr; } header { flex-direction: column; } }
-)rawliteral";
-
-const char PROGMEM CONFIG_HTML[] = R"rawliteral(
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Configuração - WavePwn</title>
-    <link rel="stylesheet" href="style.css">
-</head>
-<body>
-    <header>
-        <div class="logo">WavePwn v2.1</div>
-        <nav>
-            <a href="/" class="nav-link">Dashboard</a>
-            <a href="/config.html" class="nav-link active">Configuração</a>
-        </nav>
-    </header>
-    <div class="app-container">
-        <div class="card">
-            <h2>Configurações do Dispositivo</h2>
-            <form id="configForm" onsubmit="saveConfig(event)">
-                <div class="form-group">
-                    <label>Nome do Dispositivo</label>
-                    <input type="text" id="devName" value="WavePwn">
-                </div>
-                <div class="form-group">
-                    <label>Tema da UI</label>
-                    <select id="theme">
-                        <option value="0">Hacker Dark</option>
-                        <option value="1">Cyberpunk</option>
-                        <option value="2">Matrix</option>
-                    </select>
-                </div>
-                <div class="form-group">
-                    <label>Tempo de Scan WiFi (ms)</label>
-                    <input type="number" id="scanTime" value="600">
-                </div>
-                 <div class="form-group">
-                    <label>Mascote na Tela</label>
-                    <select id="mascot">
-                        <option value="1">Ativado</option>
-                        <option value="0">Desativado</option>
-                    </select>
-                </div>
-                
-                <div style="margin-top: 1rem; display: flex; gap: 1rem;">
-                    <button type="submit">Salvar Alterações</button>
-                    <button type="button" class="secondary" onclick="window.location.href='/'">Voltar</button>
-                </div>
-            </form>
-        </div>
-    </div>
-    <script>
-        function saveConfig(e) {
-            e.preventDefault();
-            const data = {
-                name: document.getElementById('devName').value,
-                theme: document.getElementById('theme').value,
-                scanTime: document.getElementById('scanTime').value,
-                mascot: document.getElementById('mascot').value
-            };
-            fetch('/api/config/device', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(data)
-            }).then(() => alert('Configurações salvas!'));
+        function learnIR() {
+            const name = document.getElementById('learn_name').value || 'Unknown';
+            apiCall('/ir_learn', 'POST'); // Incomplete in JS logic, usually sends body
         }
-    </script>
-</body>
-</html>
-)rawliteral";
 
-const char PROGMEM UPDATE_HTML[] = R"rawliteral(
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Atualizar - WavePwn</title>
-    <link rel="stylesheet" href="/style.css">
-</head>
-<body>
-    <header>
-        <div class="logo">WavePwn v2.1</div>
-        <nav>
-            <a href="/" class="nav-link">Dashboard</a>
-            <a href="/config.html" class="nav-link">Configuração</a>
-            <a href="/ota/update.html" class="nav-link active">Atualizar</a>
-        </nav>
-    </header>
-    <div class="app-container">
-        <div class="card">
-            <h2>Atualização de Firmware (OTA)</h2>
-            <p>Selecione o arquivo .bin para atualizar o firmware.</p>
-            
-            <form method="POST" action="/update" enctype="multipart/form-data" style="margin-top: 2rem;">
-                <input type="file" name="update" accept=".bin">
-                <br><br>
-                <button type="submit">Iniciar Atualização</button>
-            </form>
-        </div>
-    </div>
+        setInterval(() => {
+            fetch('/api/status').then(r => r.json()).then(data => {
+                document.getElementById('stat_networks').innerText = data.networks;
+                document.getElementById('stat_handshakes').innerText = data.handshakes;
+                document.getElementById('stat_battery').innerText = data.battery + '%';
+                document.getElementById('status').innerText = 'Connected';
+                document.getElementById('status').style.color = '#0f0';
+            }).catch(() => {
+                document.getElementById('status').innerText = 'Disconnected';
+                document.getElementById('status').style.color = '#f00';
+            });
+        }, 2000);
+    </script>
 </body>
 </html>
 )rawliteral";
