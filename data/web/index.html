@@ -1,0 +1,1691 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="cyberpunk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="LeleWatch Cyberpunk Command Center - Advanced WiFi Security Analysis">
+    <meta name="theme-color" content="#00fff5">
+    <title>LeleWatch Command Center</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/effects.css">
+    <link rel="stylesheet" href="css/themes/cyberpunk.css">
+    <link rel="stylesheet" href="css/themes/light.css">
+    <link rel="stylesheet" href="css/themes/dracula.css">
+    <link rel="stylesheet" href="css/themes/nord.css">
+    <link rel="stylesheet" href="css/themes/monokai.css">
+    <link rel="stylesheet" href="css/themes/solarized.css">
+    <link rel="stylesheet" href="css/themes/tokyo-night.css">
+    <link rel="stylesheet" href="css/themes/gruvbox.css">
+    <link rel="stylesheet" href="css/themes/one-dark.css">
+    <link rel="stylesheet" href="css/themes/hacker.css">
+    <link rel="stylesheet" href="css/themes/stealth.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <style>
+        /* Tooltips */
+        .tooltip-wrap {
+            position: relative;
+            display: inline-block;
+        }
+
+        .tooltip-wrap .tooltip-text {
+            visibility: hidden;
+            opacity: 0;
+            position: absolute;
+            bottom: 120%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--bg-tertiary);
+            color: var(--text-primary);
+            padding: 10px 14px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            white-space: nowrap;
+            z-index: 1000;
+            border: 1px solid var(--primary);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+            transition: all 0.2s;
+            max-width: 280px;
+            white-space: normal;
+            text-align: center;
+        }
+
+        .tooltip-wrap .tooltip-text::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -6px;
+            border: 6px solid transparent;
+            border-top-color: var(--primary);
+        }
+
+        .tooltip-wrap:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+
+        /* Boot overlay */
+        #boot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Share Tech Mono', monospace;
+            color: #00fff5;
+        }
+
+        .boot-logo {
+            font-size: 4rem;
+            margin-bottom: 30px;
+            animation: pulse 1s infinite;
+        }
+
+        .boot-title {
+            font-size: 2rem;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00fff5;
+        }
+
+        .boot-text {
+            font-size: 0.9rem;
+            text-align: left;
+            line-height: 1.8;
+            max-width: 400px;
+        }
+
+        .boot-progress {
+            width: 300px;
+            height: 4px;
+            background: #1a1a24;
+            border-radius: 2px;
+            margin-top: 30px;
+            overflow: hidden;
+        }
+
+        .boot-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00fff5, #ff00ff);
+            width: 0%;
+            animation: bootLoading 2s forwards;
+        }
+
+        @keyframes bootLoading {
+            0% {
+                width: 0%;
+            }
+
+            100% {
+                width: 100%;
+            }
+        }
+
+        /* Mobile menu */
+        .mobile-menu-btn {
+            display: none;
+            background: none;
+            border: none;
+            color: var(--primary);
+            font-size: 1.5rem;
+            padding: 10px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+
+            .sidebar {
+                position: fixed;
+                left: -100%;
+                top: 0;
+                height: 100%;
+                z-index: 1000;
+                transition: left 0.3s;
+            }
+
+            .sidebar.open {
+                left: 0;
+            }
+
+            .sidebar-overlay {
+                display: none;
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0, 0, 0, 0.7);
+                z-index: 999;
+            }
+
+            .sidebar.open+.sidebar-overlay {
+                display: block;
+            }
+
+            .header {
+                padding: 0 15px;
+            }
+
+            .header-stats {
+                display: none;
+            }
+
+            .content-area {
+                padding: 15px;
+            }
+
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .btn {
+                padding: 10px 16px;
+                font-size: 0.75rem;
+            }
+
+            .card {
+                padding: 15px;
+            }
+        }
+
+        /* File browser */
+        .file-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 15px;
+            border-bottom: 1px solid var(--border-color);
+            transition: background 0.2s;
+        }
+
+        .file-item:hover {
+            background: var(--bg-tertiary);
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .file-icon {
+            font-size: 1.3rem;
+        }
+
+        .file-details {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .file-name {
+            font-weight: 500;
+        }
+
+        .file-meta {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 15px;
+        }
+
+        .file-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        /* Volume slider */
+        .volume-control {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .volume-control input[type="range"] {
+            flex: 1;
+        }
+
+        .volume-icon {
+            font-size: 1.3rem;
+            cursor: pointer;
+        }
+
+        /* Settings sections */
+        .settings-section {
+            margin-bottom: 30px;
+        }
+
+        .settings-section h4 {
+            color: var(--primary);
+            margin-bottom: 15px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+        }
+
+        /* Attack grid */
+        .attack-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 10px;
+        }
+
+        .attack-btn {
+            padding: 15px 10px;
+            font-size: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .attack-btn .icon {
+            font-size: 1.5rem;
+        }
+
+        /* Badge pulse */
+        .badge-pulse {
+            animation: badgePulse 2s infinite;
+        }
+
+        @keyframes badgePulse {
+
+            0%,
+            100% {
+                box-shadow: 0 0 0 0 var(--primary-dim);
+            }
+
+            50% {
+                box-shadow: 0 0 0 8px transparent;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Boot Animation Overlay -->
+    <div id="boot-overlay">
+        <div class="boot-logo" id="boot-mascot">🐉</div>
+        <div class="boot-title">LeleWatch</div>
+        <div class="boot-text"></div>
+        <div class="boot-progress">
+            <div class="boot-progress-bar"></div>
+        </div>
+    </div>
+    <!-- Background Effects -->
+    <div id="background-effects">
+        <canvas id="matrix-canvas"></canvas>
+        <canvas id="particles-canvas"></canvas>
+    </div>
+    <div class="scanlines-overlay"></div>
+    <!-- Main App -->
+    <div id="app">
+        <!-- Mobile Menu Button -->
+        <button class="mobile-menu-btn" id="mobile-menu-btn" onclick="toggleSidebar()">☰</button>
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar" id="sidebar">
+            <div class="brand">
+                <span class="logo" id="sidebar-mascot">🐉</span>
+                <h2 class="neon-flicker">LeleWatch</h2>
+            </div>
+            <ul class="nav-links">
+                <li><a href="#" data-view="dashboard" class="active"><span
+                            class="icon">📊</span><span>Dashboard</span></a></li>
+                <li><a href="#" data-view="attacks"><span class="icon">⚔️</span><span>WiFi</span></a></li>
+                <li><a href="#" data-view="networks"><span class="icon">📶</span><span>Redes</span></a></li>
+                <li><a href="#" data-view="bluetooth"><span class="icon">📱</span><span>Bluetooth</span></a></li>
+                <li><a href="#" data-view="handshakes"><span class="icon">🤝</span><span>Handshakes</span></a></li>
+                <li><a href="#" data-view="terminal"><span class="icon">💻</span><span>Terminal</span></a></li>
+                <li><a href="#" data-view="files"><span class="icon">📁</span><span>Arquivos</span></a></li>
+                <li><a href="#" data-view="cameras"><span class="icon">📷</span><span>Câmeras</span></a></li>
+                <li><a href="#" data-view="ir-remote"><span class="icon">📺</span><span>Controle Remoto</span></a></li>
+                <li><a href="#" data-view="tools"><span class="icon">🛠️</span><span>Ferramentas</span></a></li>
+                <li><a href="#" data-view="config"><span class="icon">⚙️</span><span>Config</span></a></li>
+            </ul>
+            <div class="connection-status" id="connection-status">
+                <span class="dot"></span> Desconectado
+            </div>
+        </nav>
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+        <!-- Main Content -->
+        <main class="main-content">
+            <header class="header">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="header-stats">
+                    <div class="stat-pill"><span class="icon">🔋</span><span class="value" id="battery">--%</span></div>
+                    <div class="stat-pill"><span class="icon">🌡️</span><span class="value" id="temperature">--°C</span>
+                    </div>
+                    <div class="stat-pill"><span class="icon">⏱️</span><span class="value" id="uptime">00:00:00</span>
+                    </div>
+                    <div class="stat-pill"><span class="icon">📡</span><span class="value" id="pps">0 PPS</span></div>
+                </div>
+            </header>
+            <div class="content-area">
+                <!-- DASHBOARD VIEW -->
+                <section id="dashboard" class="view active">
+                    <div class="grid grid-4 mb-3">
+                        <div class="card stat-card highlight">
+                            <div class="value" id="handshakes-count">0</div>
+                            <div class="label">Handshakes</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="networks-count">0</div>
+                            <div class="label">Redes</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="ble-count">0</div>
+                            <div class="label">BLE Devices</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="deauths-count">0</div>
+                            <div class="label">Deauths</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-4 mb-3">
+                        <div class="card stat-card">
+                            <div class="value" id="pmkid-count">0</div>
+                            <div class="label">PMKIDs</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="ram-used">--</div>
+                            <div class="label">RAM Usada</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="heap-free">--</div>
+                            <div class="label">Heap Livre</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="sd-space">--</div>
+                            <div class="label">SD Card</div>
+                        </div>
+                    </div>
+                    <div class="grid grid-2 gap-3">
+                        <div class="card">
+                            <div class="card-header" style="flex-wrap:wrap;">
+                                <div style="display:flex;justify-content:space-between;width:100%;margin-bottom:8px;">
+                                    <span style="color:var(--warning);font-weight:600;">⭐ <span id="mascot-xp">0</span>
+                                        XP (Lv.<span id="mascot-level">1</span>)</span>
+                                    <span style="color:var(--text-muted);">🎂 <span id="mascot-age">0d 0h</span></span>
+                                </div>
+                                <h3>Mascote</h3><span id="mascot-name" style="color:var(--primary);">Neura</span>
+                            </div>
+                            <div class="dragon-container" style="text-align:center;">
+                                <div class="dragon-avatar" id="dragon-avatar" style="font-size:80px;">🐲</div>
+                                <div class="dragon-bubble" id="dragon-bubble"
+                                    style="padding:10px;margin-top:10px;border:1px solid var(--primary);border-radius:8px;font-size:0.9rem;">
+                                    Aguardando comandos...</div>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Atividade WiFi</h3><span id="attack-indicator">Idle</span>
+                            </div>
+                            <div style="height: 200px;"><canvas id="signal-chart"></canvas></div>
+                        </div>
+                    </div>
+                    <div class="grid grid-3 gap-3 mt-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Canais WiFi</h3>
+                            </div>
+                            <div style="height:180px;"><canvas id="channel-chart"></canvas></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Tipos de Segurança</h3>
+                            </div>
+                            <div style="height:180px;"><canvas id="security-chart"></canvas></div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Log do Sistema</h3>
+                            </div>
+                            <div class="terminal-body" id="log-container" style="height:180px;overflow-y:auto;">
+                                <div class="log-line">[SYSTEM] Iniciando...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ATTACKS VIEW -->
+                <section id="attacks" class="view">
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3>⚔️ Ataques WiFi</h3>
+                        </div>
+                        <div class="attack-grid">
+                            <div class="tooltip-wrap"><button class="btn btn-danger attack-btn"
+                                    onclick="sendCommand('deauth')"><span class="icon">⚡</span>Deauth
+                                    Flood</button><span class="tooltip-text">Desconecta todos os clientes de uma rede
+                                    alvo enviando pacotes de desautenticação</span></div>
+                            <div class="tooltip-wrap"><button class="btn btn-warning attack-btn"
+                                    onclick="sendCommand('beacon')"><span class="icon">📡</span>Beacon
+                                    Flood</button><span class="tooltip-text">Cria centenas de redes WiFi falsas para
+                                    confundir scanners</span></div>
+                            <div class="tooltip-wrap"><button class="btn btn-primary attack-btn"
+                                    onclick="sendCommand('handshake')"><span class="icon">🤝</span>Capturar
+                                    HS</button><span class="tooltip-text">Captura o 4-way handshake WPA2 para cracking
+                                    offline</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#bd00ff;color:#fff;" onclick="sendCommand('pmkid')"><span
+                                        class="icon">🔑</span>PMKID</button><span class="tooltip-text">Captura hash
+                                    PMKID sem precisar de cliente conectado</span></div>
+                            <div class="tooltip-wrap"><button class="btn btn-secondary attack-btn"
+                                    onclick="sendCommand('wps_pixie')"><span class="icon">✨</span>WPS
+                                    Pixie</button><span class="tooltip-text">Explora vulnerabilidade WPS Pixie Dust
+                                    offline</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#ff6600;color:#fff;" onclick="sendCommand('evil_twin')"><span
+                                        class="icon">👿</span>Evil Twin</button><span class="tooltip-text">Clona uma
+                                    rede existente para capturar credenciais</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#00a8ff;color:#fff;" onclick="sendCommand('karma')"><span
+                                        class="icon">🎭</span>Karma</button><span class="tooltip-text">Responde a todas
+                                    solicitações de probe request</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#ffcc00;color:#000;" onclick="sendCommand('probe_flood')"><span
+                                        class="icon">🔍</span>Probe Flood</button><span class="tooltip-text">Inunda o
+                                    espectro com requisições de probe</span></div>
+                            <div class="tooltip-wrap"><button class="btn btn-secondary attack-btn"
+                                    onclick="sendCommand('hidden_reveal')"><span class="icon">👁️</span>Hidden
+                                    SSID</button><span class="tooltip-text">Revela redes WiFi com SSID oculto</span>
+                            </div>
+                            <div class="tooltip-wrap"><button class="btn btn-secondary attack-btn"
+                                    onclick="sendCommand('channel_hop')"><span class="icon">📻</span>Ch
+                                    Hopper</button><span class="tooltip-text">Monitora múltiplos canais
+                                    alternadamente</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#00ff9d;color:#000;" onclick="sendCommand('auth_flood')"><span
+                                        class="icon">🚪</span>Auth Flood</button><span class="tooltip-text">Inunda AP
+                                    com requisições de autenticação</span></div>
+                            <div class="tooltip-wrap"><button class="btn btn-danger attack-btn"
+                                    onclick="sendCommand('deassoc')"><span class="icon">💔</span>Deassoc</button><span
+                                    class="tooltip-text">Força desassociação de clientes do AP</span></div>
+                            <!-- WPS Attacks (inside WiFi Attacks) -->
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#ff00ff;color:#fff;" onclick="sendCommand('wps_pixie')"><span
+                                        class="icon">✨</span>Pixie Dust</button><span class="tooltip-text">Explora PRNG
+                                    fraco em roteadores vulneráveis para extrair PIN offline via E-Hash</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#ff6600;color:#fff;" onclick="sendCommand('wps_bruteforce')"><span
+                                        class="icon">🔢</span>WPS Brute</button><span class="tooltip-text">Força bruta
+                                    no PIN WPS. Apenas 11.000 combinações (4+3 dígitos + checksum)</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:#ff0055;color:#fff;" onclick="sendCommand('wps_flood')"><span
+                                        class="icon">💥</span>WPS Flood</button><span class="tooltip-text">Inunda AP com
+                                    pacotes WPS NACK causando DoS</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    style="background:linear-gradient(135deg,#ff00ff,#ff6600);color:#fff;"
+                                    onclick="startAllWPS()"><span class="icon">🎯</span>TODOS WPS</button><span
+                                    class="tooltip-text">Executa Pixie Dust → Brute-Force → Flood em sequência</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card mb-3">
+                        <div class="card-header">
+                            <h3>🎯 Alvo</h3>
+                        </div>
+                        <div class="form-group"><label>Rede Alvo</label><select id="target-selector">
+                                <option value="FF:FF:FF:FF:FF:FF">Broadcast (Todos)</option>
+                            </select></div>
+                        <button class="btn btn-primary" onclick="sendCommand('wifi_scan')">🔍 Escanear Redes</button>
+                    </div>
+
+                    <!-- HCXDump Tool Attack (Hunter) -->
+                    <div class="card mb-3" style="border:1px solid var(--primary);">
+                        <div class="card-header" style="background:rgba(0,255,157,0.1);">
+                            <h3>💣 HCXDump (Hunter)</h3>
+                        </div>
+                        <div style="padding:10px;">
+                            <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:10px;">
+                                Ataque agressivo (hcxdumptool) para capturar PMKIDs e Handshakes de todos os clientes
+                                próximos.
+                                <strong>Modo Caçador Completo.</strong>
+                            </p>
+                            <div class="grid grid-2 gap-2">
+                                <div class="form-group"><label>Canais</label><select id="hcx-channels">
+                                        <option value="0">Todos (Scan)</option>
+                                        <option value="1">Canal 1</option>
+                                        <option value="6">Canal 6</option>
+                                        <option value="11">Canal 11</option>
+                                    </select></div>
+                                <div class="form-group"><label>Active Beaconing</label><select id="hcx-active">
+                                        <option value="1">Ativado (Agressivo)</option>
+                                        <option value="0">Desativado (Passivo)</option>
+                                    </select></div>
+                            </div>
+                            <button class="btn btn-danger"
+                                style="width:100%;font-weight:bold;animation:pulse 2s infinite;"
+                                onclick="startHCXDump()">🚀 INICIAR CAÇADA</button>
+                        </div>
+                    </div>
+
+                    <!-- PRINTER CHAOS SECTION -->
+                    <div class="card mb-3">
+                        <div class="card-header"
+                            style="background:linear-gradient(135deg,rgba(255,0,85,0.2),rgba(0,255,245,0.1));">
+                            <h3>🖨️ Impressoras</h3>
+                            <span id="printer-count"
+                                style="background:var(--danger);padding:2px 8px;border-radius:10px;font-size:0.8rem;">0</span>
+                        </div>
+                        <!-- Scanner -->
+                        <div class="form-group mt-2"><label>Faixa de IP</label>
+                            <select id="printer-ip-range" style="width:100%;">
+                                <option value="192.168.4">192.168.4.0/24 (AP LeleWatch)</option>
+                                <option value="192.168.1">192.168.1.0/24 (Rede Local)</option>
+                                <option value="192.168.0">192.168.0.0/24</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary mb-3" style="width:100%;" onclick="startPrinterScan()">🔍
+                            Escanear Impressoras</button>
+                        <div id="printer-scan-progress" style="display:none;margin-bottom:15px;">
+                            <div style="background:var(--bg-tertiary);border-radius:8px;overflow:hidden;height:15px;">
+                                <div id="printer-scan-bar"
+                                    style="background:var(--primary);height:100%;width:0%;transition:width 0.3s;"></div>
+                            </div>
+                        </div>
+                        <!-- Print Options -->
+                        <div style="background:var(--bg-tertiary);padding:15px;border-radius:8px;margin-bottom:15px;">
+                            <div class="form-group"><label>📝 Texto para Imprimir</label>
+                                <textarea id="printer-text" rows="3"
+                                    style="width:100%;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);padding:10px;border-radius:8px;"
+                                    placeholder="VOCÊ FOI HACKEADO PELO DRAGÃO 🐉">VOCÊ FOI HACKEADO PELO DRAGÃO 🐉</textarea>
+                            </div>
+                            <div class="form-group"><label>🖼️ Imagem (PNG/JPG)</label>
+                                <input type="file" id="printer-image" accept="image/*"
+                                    style="width:100%;background:var(--bg-secondary);border:1px solid var(--border-color);color:var(--text-primary);padding:8px;border-radius:8px;">
+                            </div>
+                            <div class="grid grid-2 gap-2">
+                                <div class="form-group"><label>📄 Cópias</label>
+                                    <input type="number" id="printer-copies" value="1" min="1" max="999"
+                                        style="width:100%;">
+                                </div>
+                                <div class="form-group"><label>📛 Nome Novo</label>
+                                    <input type="text" id="printer-newname" value="HACKED BY LELEWATCH"
+                                        style="width:100%;">
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Attack Buttons -->
+                        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px;">
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    onclick="printerAttack('print_text')"><span
+                                        class="icon">📝</span>Texto</button><span class="tooltip-text">Imprime o texto
+                                    definido acima</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    onclick="printerAttack('print_image')"><span
+                                        class="icon">🖼️</span>Imagem</button><span class="tooltip-text">Imprime a
+                                    imagem selecionada</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    onclick="printerAttack('print_test')"><span class="icon">🔄</span>Loop</button><span
+                                    class="tooltip-text">Imprime página de teste infinitamente</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    onclick="printerAttack('jam_queue')"><span class="icon">📑</span>Travar
+                                    Fila</button><span class="tooltip-text">Envia 500 páginas vazias para travar</span>
+                            </div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    onclick="printerAttack('rename')"><span class="icon">✏️</span>Renomear</button><span
+                                    class="tooltip-text">Altera nome da impressora</span></div>
+                            <div class="tooltip-wrap"><button class="btn attack-btn"
+                                    onclick="printerAttack('fake_status')"><span class="icon">⚠️</span>Status
+                                    Falso</button><span class="tooltip-text">Define status como SEM PAPEL ou
+                                    ATOLADA</span></div>
+                        </div>
+                        <!-- Printers Table -->
+                        <div style="overflow-x:auto;max-height:300px;">
+                            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                                <thead>
+                                    <tr style="background:var(--bg-tertiary);">
+                                        <th style="padding:8px;">IP</th>
+                                        <th style="padding:8px;">Marca</th>
+                                        <th style="padding:8px;">Status</th>
+                                        <th style="padding:8px;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="printers-tbody">
+                                    <tr>
+                                        <td colspan="4" class="text-muted" style="padding:15px;text-align:center;">
+                                            Nenhuma impressora. Execute o scan.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Attack All Button -->
+                        <button class="btn mt-3"
+                            style="width:100%;padding:15px;font-size:1.2rem;background:linear-gradient(135deg,#ff0055,#ff0000);color:#fff;border:none;border-radius:8px;"
+                            onclick="attackAllPrinters()">
+                            🖨️☠️ IMPRIMIR EM TODAS ☠️🖨️
+                        </button>
+                    </div>
+                    <div class="card">
+                        <button class="btn btn-pwn" id="pwn-btn" onclick="pwnEverything()">☠️ PWN EVERYTHING ☠️</button>
+                        <p class="text-center text-muted mt-2">Ativa todos os ataques por 60 segundos</p>
+                    </div>
+                    <div class="mt-3"><button class="btn btn-secondary" style="width:100%;"
+                            onclick="stopAllAttacks()">🛑 PARAR TUDO</button></div>
+                </section>
+
+                <!-- NETWORKS VIEW -->
+                <section id="networks" class="view">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Redes Detectadas</h3><button class="btn btn-sm btn-primary"
+                                onclick="sendCommand('wifi_scan')">🔍 Escanear</button>
+                        </div>
+                        <div class="table-container" style="overflow-x:auto;">
+                            <table id="networks-table">
+                                <thead>
+                                    <tr>
+                                        <th>SSID</th>
+                                        <th>BSSID</th>
+                                        <th>CH</th>
+                                        <th>Sinal</th>
+                                        <th>Segurança</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Clique em Escanear</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- BLUETOOTH VIEW -->
+                <section id="bluetooth" class="view">
+                    <div class="grid grid-2 gap-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Dispositivos BLE</h3><button class="btn btn-sm btn-primary"
+                                    onclick="sendCommand('ble_scan')">🔍 Scan</button>
+                            </div>
+                            <ul id="ble-list" class="simple-list" style="max-height:300px;overflow-y:auto;">
+                                <li class="text-muted">Nenhum dispositivo</li>
+                            </ul>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>BLE Spam Personalizado</h3>
+                            </div>
+                            <div class="form-group"><label>Tipo de Pacote</label>
+                                <select id="ble-packet-type">
+                                    <option value="0">Apple AirPods</option>
+                                    <option value="1">Apple AirTag</option>
+                                    <option value="2">Windows Swift Pair</option>
+                                    <option value="3">Google Fast Pair</option>
+                                    <option value="4">Samsung Buds</option>
+                                    <option value="5">Eddystone URL</option>
+                                    <option value="6">iBeacon</option>
+                                    <option value="7">Custom Payload</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary"
+                                onclick="sendCommand('ble_custom',{type:document.getElementById('ble-packet-type').value})">Iniciar
+                                Spam</button>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>🔍 Ferramentas BLE</h3>
+                        </div>
+                        <div class="grid grid-3 gap-2">
+                            <div class="tooltip-wrap"><button class="btn btn-secondary"
+                                    onclick="sendCommand('ble_skimmer')">💳 Skimmer Detect</button><span
+                                    class="tooltip-text">Detecta skimmers Bluetooth em caixas eletrônicos/bomba de
+                                    gasolina</span></div>
+                            <div class="tooltip-wrap"><button class="btn btn-secondary"
+                                    onclick="sendCommand('ble_tracker')">📍 Tracker Hunt</button><span
+                                    class="tooltip-text">Procura por AirTags/SmartTags ocultos seguindo você</span>
+                            </div>
+                            <div class="tooltip-wrap"><button class="btn btn-secondary"
+                                    onclick="sendCommand('ble_clone')">📋 Clone Device</button><span
+                                    class="tooltip-text">Clona o MAC e propaganda de um dispositivo BLE</span></div>
+                        </div>
+                    </div>
+
+                    <!-- BLUETOOTH CHAOS SECTION (Moved into Grid) -->
+                    <div class="card mb-3 mt-3" style="grid-column: 1 / -1;">
+                        <div class="card-header"
+                            style="background:linear-gradient(135deg,rgba(0,0,255,0.2),rgba(0,255,157,0.1));display:block;text-align:center;">
+                            <div style="font-size:3rem;margin-bottom:-10px;animation:float 3s ease-in-out infinite;">🤖
+                            </div>
+                            <h3 style="text-shadow: 0 0 10px var(--primary);">🔊 Bluetooth Chaos</h3>
+                            <span id="ble-chaos-status" style="font-size:0.8rem;color:var(--text-muted);">Pronto para o
+                                caos</span>
+                        </div>
+
+                        <!-- Scanner -->
+                        <div style="padding:10px;background:var(--bg-tertiary);border-radius:8px;margin-bottom:15px;">
+                            <div class="flex-between">
+                                <h4 style="margin:0;">Dispositivos de Áudio</h4>
+                                <span id="ble-audio-count"
+                                    style="background:var(--primary);padding:2px 8px;border-radius:10px;font-size:0.8rem;color:#000;">0</span>
+                            </div>
+                            <button class="btn btn-primary mt-2" style="width:100%;"
+                                onclick="startBluetoothChaosScan()">📡
+                                Escanear Caixas de Som</button>
+                            <div id="ble-scan-progress" style="display:none;margin-top:10px;">
+                                <div
+                                    style="background:var(--bg-secondary);border-radius:8px;overflow:hidden;height:10px;">
+                                    <div id="ble-scan-bar"
+                                        style="background:var(--primary);height:100%;width:0%;transition:width 0.3s;box-shadow:0 0 10px var(--primary);">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Target List -->
+                        <div
+                            style="max-height:200px;overflow-y:auto;margin-bottom:15px;border:1px solid var(--border-color);border-radius:8px;">
+                            <table style="width:100%;border-collapse:collapse;font-size:0.8rem;">
+                                <thead style="background:var(--bg-secondary);position:sticky;top:0;">
+                                    <tr>
+                                        <th style="padding:8px;">Nome</th>
+                                        <th style="padding:8px;">MAC</th>
+                                        <th style="padding:8px;">RSSI</th>
+                                        <th style="padding:8px;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ble-chaos-tbody">
+                                    <tr>
+                                        <td colspan="4" class="text-muted" style="padding:15px;text-align:center;">
+                                            Nenhuma caixa
+                                            encontrada.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Chaos Controls -->
+                        <div style="background:var(--bg-tertiary);padding:15px;border-radius:8px;margin-bottom:15px;">
+                            <div class="form-group"><label>📛 Nome Personalizado / Spam</label>
+                                <input type="text" id="ble-custom-name" value="Free AirPods Pro"
+                                    style="width:100%;color:var(--primary);font-weight:bold;">
+                            </div>
+
+                            <div class="grid grid-2 gap-2 mt-2">
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        style="background:var(--danger);"
+                                        onclick="bluetoothAttack('connection_flood')"><span class="icon">🌊</span>Flood
+                                        Conexão</button><span class="tooltip-text">150+ req/s: Trava a caixa e
+                                        desconecta
+                                        usuários</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        style="background:var(--warning);color:#000;"
+                                        onclick="bluetoothAttack('disconnect')"><span
+                                            class="icon">✂️</span>Derrubar</button><span class="tooltip-text">Expulsa
+                                        quem está
+                                        conectado (Exploit connection params)</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn" style="background:#bd00ff;"
+                                        onclick="bluetoothAttack('fake_spam')"><span class="icon">👻</span>Fake
+                                        Spam</button><span class="tooltip-text">Spam com nome personalizado que trava
+                                        Bluetooth
+                                        alheio</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn" style="background:#00a8ff;"
+                                        onclick="bluetoothAttack('rename')"><span
+                                            class="icon">✏️</span>Renomear</button><span class="tooltip-text">Muda o
+                                        nome da caixa permanentemente (se vulnerável)</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        style="background:#ffcc00;color:#000;"
+                                        onclick="bluetoothAttack('audio_glitch')"><span class="icon">🔊</span>Audio
+                                        Glitch</button><span class="tooltip-text">Envia áudio corrompido (chiado
+                                        infinito)</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        style="background:#00ff9d;color:#000;"
+                                        onclick="bluetoothAttack('force_pair')"><span class="icon">🔗</span>Forçar
+                                        Pair</button><span class="tooltip-text">Flood de pedidos de pareamento</span>
+                                </div>
+                            </div>
+                            <button class="btn attack-btn mt-2" style="width:100%;background:#ffffff;color:#000;"
+                                onclick="bluetoothAttack('device_flood')"><span class="icon">🧟</span>Device Flood (30+
+                                Clones)</button>
+                        </div>
+
+                        <!-- NUKE BUTTON -->
+                        <button class="btn glitch-btn"
+                            style="width:100%;padding:20px;font-size:1.3rem;background:linear-gradient(45deg,#ff0000,#ff0055);text-transform:uppercase;font-weight:900;letter-spacing:2px;"
+                            onclick="attackAllBluetooth()">
+                            ☠️ TODOS OS ATAQUES ☠️
+                        </button>
+                    </div>
+                </section>
+
+                <!-- HANDSHAKES VIEW -->
+                <section id="handshakes" class="view">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🤝 Handshakes Capturados</h3><button class="btn btn-sm btn-primary"
+                                onclick="loadHandshakes()">🔄 Atualizar</button>
+                        </div>
+                        <div id="handshakes-list" style="min-height:200px;">
+                            <p class="text-muted">Carregando...</p>
+                        </div>
+                    </div>
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>🔓 Password Cracker</h3>
+                        </div>
+                        <div class="form-group"><label>Selecione Handshake</label><select id="crack-handshake-select">
+                                <option value="">Selecione...</option>
+                            </select></div>
+                        <div class="grid grid-2 gap-2">
+                            <button class="btn btn-danger" onclick="startCracking()">🔓 Crack Local</button>
+                            <button class="btn btn-primary" onclick="uploadSelectedHandshakeToOHC()">📤 Enviar para
+                                OHC</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- TERMINAL VIEW -->
+                <section id="terminal" class="view">
+                    <div class="card" style="padding:0;">
+                        <div class="terminal">
+                            <div class="terminal-header"><span class="dot red"></span><span
+                                    class="dot yellow"></span><span class="dot green"></span><span
+                                    style="margin-left:10px;color:var(--text-muted);">LeleWatch Terminal</span></div>
+                            <div class="terminal-body" id="terminal-output"
+                                style="height:400px;overflow-y:auto;padding:15px;font-family:var(--font-mono);background:#000;">
+                                <div>Welcome to LeleWatch Terminal v2.0</div>
+                                <div>Type 'help' for available commands.</div>
+                                <div>---</div>
+                            </div>
+                            <div class="terminal-input"><span class="prompt">$</span><input type="text"
+                                    id="terminal-input" placeholder="Enter command..."
+                                    onkeydown="if(event.key==='Enter')sendTerminalCommand()">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- FILES VIEW -->
+                <section id="files" class="view">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📁 Gerenciador de Arquivos (SD)</h3>
+                            <div style="display:flex;gap:10px;">
+                                <button class="btn btn-sm btn-secondary" onclick="refreshFiles()">🔄 Atualizar</button>
+                                <button class="btn btn-sm btn-primary" onclick="createFolder()">📁 Nova Pasta</button>
+                            </div>
+                        </div>
+                        <div id="file-breadcrumb" style="padding:10px;color:var(--text-muted);font-size:0.85rem;">📂 /
+                        </div>
+                        <div id="file-browser" style="min-height:300px;max-height:500px;overflow-y:auto;">
+                            <p class="text-muted">Carregando arquivos...</p>
+                        </div>
+                    </div>
+                    <div class="grid grid-2 gap-3 mt-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📤 Upload de Arquivo</h3>
+                            </div>
+                            <input type="file" id="file-upload" style="display:none;"
+                                onchange="uploadFile(this.files[0])">
+                            <div class="drop-zone" onclick="document.getElementById('file-upload').click()"
+                                style="border:2px dashed var(--border-color);padding:40px;text-align:center;border-radius:var(--border-radius);cursor:pointer;">
+                                <p>📂 Clique ou arraste arquivos aqui</p>
+                            </div>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📦 OTA Update</h3>
+                            </div>
+                            <input type="file" id="ota-upload" accept=".bin" style="display:none;"
+                                onchange="uploadOTA(this.files[0])">
+                            <div class="drop-zone" onclick="document.getElementById('ota-upload').click()"
+                                style="border:2px dashed var(--warning);padding:40px;text-align:center;border-radius:var(--border-radius);cursor:pointer;">
+                                <p>📦 Arraste o arquivo .bin aqui</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CAMERAS CHAOS VIEW -->
+                <section id="cameras" class="view">
+                    <!-- Header with Dragon -->
+                    <div class="card mb-3"
+                        style="text-align:center;background:linear-gradient(135deg,rgba(255,0,85,0.2),rgba(0,255,245,0.1));">
+                        <div style="font-size:80px;margin-bottom:10px;">🐉📷</div>
+                        <h2 style="color:var(--primary);margin:0;">CAMERA CHAOS</h2>
+                        <p class="text-muted">Scanner de Câmeras IP + Ataques Automáticos</p>
+                    </div>
+                    <div class="grid grid-2 gap-3">
+                        <!-- Scanner Panel -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🔍 Scanner de Câmeras</h3>
+                            </div>
+                            <div class="form-group"><label>Faixa de IP</label>
+                                <select id="cam-ip-range">
+                                    <option value="192.168.4">192.168.4.0/24 (AP LeleWatch)</option>
+                                    <option value="192.168.1">192.168.1.0/24 (Rede Local)</option>
+                                    <option value="192.168.0">192.168.0.0/24</option>
+                                    <option value="10.0.0">10.0.0.0/24</option>
+                                    <option value="172.16.0">172.16.0.0/24</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Portas a Escanear</label>
+                                <input type="text" id="cam-ports"
+                                    value="80,81,8080,8000,554,8554,37777,8081,8888,9000,23,2323,9527">
+                            </div>
+                            <button class="btn btn-primary" style="width:100%;" onclick="startCameraScan()">🚀 Iniciar
+                                Scan</button>
+                            <div id="cam-scan-progress" style="display:none;margin-top:15px;">
+                                <div
+                                    style="background:var(--bg-tertiary);border-radius:8px;overflow:hidden;height:20px;">
+                                    <div id="cam-scan-bar"
+                                        style="background:var(--primary);height:100%;width:0%;transition:width 0.3s;">
+                                    </div>
+                                </div>
+                                <div id="cam-scan-text" class="text-muted mt-2">Escaneando...</div>
+                            </div>
+                        </div>
+                        <!-- Attack Options -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>⚔️ Ataques Disponíveis</h3>
+                            </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;">
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        onclick="camAttack('default_creds')"><span class="icon">🔑</span>Credenciais
+                                        Padrão</button><span class="tooltip-text">Testa +80 combinações de login/senha
+                                        de câmeras brasileiras e chinesas</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        onclick="camAttack('admin_nopass')"><span class="icon">🚪</span>Admin Sem
+                                        Senha</button><span class="tooltip-text">Tenta login como admin com senha
+                                        vazia</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        onclick="camAttack('onvif_discover')"><span class="icon">📡</span>ONVIF
+                                        Discovery</button><span class="tooltip-text">Descobre câmeras via protocolo
+                                        ONVIF padrão</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        onclick="camAttack('rtsp_capture')"><span class="icon">🎥</span>Captura
+                                        RTSP</button><span class="tooltip-text">Tenta acessar stream RTSP na porta
+                                        554</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        onclick="camAttack('xiongmai_backdoor')"><span class="icon">🚨</span>Backdoor
+                                        9527</button><span class="tooltip-text">Explora backdoor Xiongmai na porta 9527
+                                        - câmeras XM, HiSilicon</span></div>
+                                <div class="tooltip-wrap"><button class="btn attack-btn"
+                                        onclick="camAttack('mirai_check')"><span
+                                            class="icon">🦠</span>Mirai-Style</button><span
+                                        class="tooltip-text">Verifica
+                                        portas Telnet 23/2323 para exploits tipo
+                                        Mirai</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Giant Attack All Button -->
+                    <div class="card mt-3"
+                        style="background:linear-gradient(135deg,rgba(255,0,0,0.3),rgba(255,0,85,0.2));border:2px solid #ff0055;">
+                        <button class="btn"
+                            style="width:100%;padding:25px;font-size:1.5rem;background:linear-gradient(135deg,#ff0055,#ff0000);color:#fff;border:none;border-radius:12px;cursor:pointer;"
+                            onclick="attackAllCameras()">
+                            ☠️ ATACAR TODAS AS CÂMERAS ☠️
+                        </button>
+                        <p class="text-muted mt-2" style="text-align:center;font-size:0.8rem;">⚠️ Executa TODOS os
+                            ataques em TODAS as câmeras encontradas</p>
+                    </div>
+                    <!-- Cameras Table -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>📋 Câmeras Encontradas</h3><span id="cam-count">0</span>
+                        </div>
+                        <div style="overflow-x:auto;">
+                            <table class="table" id="cameras-table" style="width:100%;border-collapse:collapse;">
+                                <thead>
+                                    <tr style="background:var(--bg-tertiary);text-align:left;">
+                                        <th style="padding:12px;">IP</th>
+                                        <th style="padding:12px;">Porta</th>
+                                        <th style="padding:12px;">Marca/Modelo</th>
+                                        <th style="padding:12px;">Status</th>
+                                        <th style="padding:12px;">Stream</th>
+                                        <th style="padding:12px;">Ação</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="cameras-tbody">
+                                    <tr>
+                                        <td colspan="6" class="text-muted" style="padding:20px;text-align:center;">
+                                            Nenhuma câmera encontrada. Inicie um scan.</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <!-- Credentials Database Info -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>🔐 Base de Credenciais</h3>
+                        </div>
+                        <div class="grid grid-3 gap-2" style="font-size:0.8rem;">
+                            <div style="background:var(--bg-tertiary);padding:10px;border-radius:8px;">
+                                <strong style="color:var(--primary);">🇧🇷 Brasileiras (50+)</strong><br>
+                                Intelbras, Giga, Luxvision, JFL, Positivo, TP-Link BR, Multilaser, Elsys
+                            </div>
+                            <div style="background:var(--bg-tertiary);padding:10px;border-radius:8px;">
+                                <strong style="color:var(--warning);">🇨🇳 Chinesas (30+)</strong><br>
+                                Xiongmai, HiSilicon, Jovision, V380, Yoosee, Tuya, TVT, XM, Dahua
+                            </div>
+                            <div style="background:var(--bg-tertiary);padding:10px;border-radius:8px;">
+                                <strong style="color:var(--danger);">🌐 Globais (20+)</strong><br>
+                                Hikvision, Dahua, Axis, Vivotek, Foscam, Reolink, Amcrest
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- IR REMOTE CONTROL VIEW -->
+                <section id="ir-remote" class="view">
+                    <div class="grid grid-2 gap-3">
+                        <!-- Visual Remote Control -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📺 Controle Universal</h3>
+                            </div>
+                            <div class="form-group" style="margin-bottom:15px;">
+                                <label>Dispositivo</label>
+                                <select id="ir-device-type" onchange="loadIRBrand()">
+                                    <option value="tv">📺 TV</option>
+                                    <option value="ac">❄️ Ar Condicionado</option>
+                                    <option value="soundbar">🔊 Soundbar</option>
+                                    <option value="projector">🎥 Projetor</option>
+                                    <option value="dvd">📀 DVD/Blu-ray</option>
+                                    <option value="custom">⭐ Personalizado</option>
+                                </select>
+                            </div>
+                            <div class="form-group" style="margin-bottom:20px;">
+                                <label>Marca</label>
+                                <select id="ir-brand">
+                                    <option value="lg">LG</option>
+                                    <option value="samsung">Samsung</option>
+                                    <option value="sony">Sony</option>
+                                    <option value="philips">Philips</option>
+                                    <option value="panasonic">Panasonic</option>
+                                    <option value="toshiba">Toshiba</option>
+                                    <option value="aoc">AOC</option>
+                                    <option value="tcl">TCL</option>
+                                    <option value="philco">Philco</option>
+                                    <option value="semp">Semp</option>
+                                </select>
+                            </div>
+                            <!-- Visual Remote -->
+                            <div class="ir-remote-visual"
+                                style="background:linear-gradient(145deg,#1a1a24,#2a2a34);border-radius:20px;padding:20px;max-width:220px;margin:0 auto;">
+                                <div style="text-align:center;margin-bottom:15px;">
+                                    <button class="ir-btn ir-power" onclick="sendIR('power')"
+                                        title="Ligar/Desligar">⏻</button>
+                                </div>
+                                <div
+                                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:15px;">
+                                    <button class="ir-btn" onclick="sendIR('input')">📥</button>
+                                    <button class="ir-btn" onclick="sendIR('mute')">🔇</button>
+                                    <button class="ir-btn" onclick="sendIR('menu')">☰</button>
+                                </div>
+                                <!-- D-Pad -->
+                                <div
+                                    style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-bottom:15px;">
+                                    <div></div>
+                                    <button class="ir-btn ir-nav" onclick="sendIR('up')">▲</button>
+                                    <div></div>
+                                    <button class="ir-btn ir-nav" onclick="sendIR('left')">◀</button>
+                                    <button class="ir-btn ir-ok" onclick="sendIR('ok')">OK</button>
+                                    <button class="ir-btn ir-nav" onclick="sendIR('right')">▶</button>
+                                    <div></div>
+                                    <button class="ir-btn ir-nav" onclick="sendIR('down')">▼</button>
+                                    <div></div>
+                                </div>
+                                <!-- Volume / Channel -->
+                                <div style="display:grid;grid-template-columns:1fr 1fr;gap:15px;">
+                                    <div style="text-align:center;">
+                                        <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:5px;">VOL
+                                        </div>
+                                        <button class="ir-btn" onclick="sendIR('vol_up')">+</button>
+                                        <button class="ir-btn" onclick="sendIR('vol_down')"
+                                            style="margin-top:5px;">−</button>
+                                    </div>
+                                    <div style="text-align:center;">
+                                        <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:5px;">CH
+                                        </div>
+                                        <button class="ir-btn" onclick="sendIR('ch_up')">+</button>
+                                        <button class="ir-btn" onclick="sendIR('ch_down')"
+                                            style="margin-top:5px;">−</button>
+                                    </div>
+                                </div>
+                                <!-- Number Pad -->
+                                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:15px;">
+                                    <button class="ir-btn ir-num" onclick="sendIR('1')">1</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('2')">2</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('3')">3</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('4')">4</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('5')">5</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('6')">6</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('7')">7</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('8')">8</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('9')">9</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('back')">⮌</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('0')">0</button>
+                                    <button class="ir-btn ir-num" onclick="sendIR('info')">ℹ</button>
+                                </div>
+                            </div>
+                            <style>
+                                .ir-btn {
+                                    background: var(--bg-tertiary);
+                                    border: 1px solid var(--border-color);
+                                    color: var(--text-primary);
+                                    padding: 12px;
+                                    border-radius: 8px;
+                                    cursor: pointer;
+                                    transition: all 0.2s;
+                                    font-size: 1rem;
+                                }
+
+                                .ir-btn:hover {
+                                    background: var(--primary);
+                                    color: #000;
+                                    transform: scale(1.05);
+                                }
+
+                                .ir-btn:active {
+                                    transform: scale(0.95);
+                                }
+
+                                .ir-power {
+                                    background: #ff0055;
+                                    color: #fff;
+                                    width: 50px;
+                                    height: 50px;
+                                    border-radius: 50%;
+                                    font-size: 1.5rem;
+                                }
+
+                                .ir-power:hover {
+                                    background: #ff3377;
+                                }
+
+                                .ir-ok {
+                                    background: var(--primary);
+                                    color: #000;
+                                    border-radius: 50%;
+                                    width: 45px;
+                                    height: 45px;
+                                }
+
+                                .ir-nav {
+                                    width: 40px;
+                                    height: 40px;
+                                }
+
+                                .ir-num {
+                                    font-size: 0.9rem;
+                                    padding: 10px;
+                                }
+                            </style>
+                        </div>
+                        <!-- Features Panel -->
+                        <div>
+                            <!-- Auto-Find Remote -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h3>🔍 Encontrar Controle</h3>
+                                </div>
+                                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:15px;">Descubra
+                                    automaticamente qual controle funciona para seu dispositivo.</p>
+                                <div class="form-group"><label>Marca</label>
+                                    <select id="ir-autofind-brand">
+                                        <option value="lg">LG</option>
+                                        <option value="samsung">Samsung</option>
+                                        <option value="sony">Sony</option>
+                                        <option value="philips">Philips</option>
+                                        <option value="panasonic">Panasonic</option>
+                                        <option value="toshiba">Toshiba</option>
+                                        <option value="aoc">AOC</option>
+                                        <option value="tcl">TCL</option>
+                                    </select>
+                                </div>
+                                <button class="btn btn-primary" style="width:100%;" onclick="startAutoFind()">🚀 Iniciar
+                                    Busca Automática</button>
+                                <div id="ir-autofind-status"
+                                    style="display:none;margin-top:15px;padding:15px;background:var(--bg-tertiary);border-radius:8px;">
+                                    <div id="ir-autofind-text">Testando código 1 de 50...</div>
+                                    <div style="margin-top:10px;">
+                                        <button class="btn btn-success" onclick="autoFindYes()">✅ Funcionou!</button>
+                                        <button class="btn btn-danger" onclick="autoFindNo()">❌ Não</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <!-- Record Remote -->
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h3>⏺️ Gravar Controle</h3>
+                                </div>
+                                <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:15px;">Grave os botões
+                                    do seu controle original apontando para o sensor IR.</p>
+                                <div class="form-group"><label>Nome do Controle</label><input type="text"
+                                        id="ir-record-name" placeholder="Ex: TV Sala"></div>
+                                <div id="ir-record-status"
+                                    style="display:none;margin-bottom:15px;padding:15px;background:var(--bg-tertiary);border-radius:8px;">
+                                    <div id="ir-record-text">Pressione o botão no controle original...</div>
+                                    <div style="font-size:2rem;text-align:center;margin:10px 0;" id="ir-record-btn">
+                                        POWER</div>
+                                </div>
+                                <div id="ir-record-buttons" style="display:none;margin-bottom:15px;">
+                                    <div style="display:flex;flex-wrap:wrap;gap:5px;" id="ir-recorded-list"></div>
+                                </div>
+                                <button class="btn btn-warning" style="width:100%;" onclick="startRecording()">⏺️
+                                    Iniciar Gravação</button>
+                            </div>
+                            <!-- Saved Remotes -->
+                            <div class="card">
+                                <div class="card-header">
+                                    <h3>💾 Controles Salvos</h3>
+                                </div>
+                                <div id="ir-saved-list" style="min-height:60px;">
+                                    <p class="text-muted">Nenhum controle salvo</p>
+                                </div>
+                                <button class="btn btn-secondary mt-2" onclick="loadSavedRemotes()">🔄
+                                    Atualizar</button>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- TV Nuke -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>☠️ TV NUKE</h3>
+                        </div>
+                        <p style="font-size:0.85rem;color:var(--text-muted);margin-bottom:15px;">Envia sinais de
+                            desligar para TODAS as marcas de TV conhecidas. Perfeito para lojas e lugares públicos!</p>
+                        <button class="btn btn-danger" style="width:100%;" onclick="sendCommand('tv_nuke')">☠️ DESLIGAR
+                            TODAS AS TVs</button>
+                    </div>
+                </section>
+
+                <!-- TOOLS VIEW -->
+                <section id="tools" class="view">
+                    <div class="grid grid-2 gap-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🖼️ Wallpapers</h3>
+                            </div>
+                            <div id="wallpaper-gallery"
+                                style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;max-height:300px;overflow-y:auto;">
+                            </div>
+                            <input type="file" id="wallpaper-upload" accept=".png" style="display:none;"
+                                onchange="uploadWallpaper(this.files[0])">
+                            <button class="btn btn-secondary mt-2"
+                                onclick="document.getElementById('wallpaper-upload').click()">📤 Upload PNG</button>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>⏰ Attack Timeline</h3>
+                            </div>
+                            <div id="attack-timeline" style="min-height:150px;">
+                                <p class="text-muted">Nenhum ataque agendado</p>
+                            </div>
+                            <button class="btn btn-secondary mt-2" onclick="scheduleAttack()">➕ Agendar Ataque</button>
+                        </div>
+
+                        <!-- Handshake Scheduler -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📅 Agendador de Upload</h3>
+                            </div>
+                            <p class="text-muted" style="font-size:0.8rem;">Envio automático de handshakes não quebrados
+                                para OnlineHashCrack.</p>
+                            <div class="form-group">
+                                <label>Agendar Envio</label>
+                                <select id="hs-schedule-time">
+                                    <option value="next_connect">Próxima conexão Web</option>
+                                    <option value="30">Daqui a 30 minutos</option>
+                                    <option value="60">Daqui a 1 hora</option>
+                                    <option value="120">Daqui a 2 horas</option>
+                                    <option value="720">Daqui a 12 horas</option>
+                                    <option value="1440">Daqui a 24 horas</option>
+                                </select>
+                            </div>
+                            <div class="form-check" style="margin:10px 0;">
+                                <input type="checkbox" id="hs-auto-upload">
+                                <label for="hs-auto-upload" style="display:inline;">Auto-upload quando online</label>
+                            </div>
+                            <button class="btn btn-primary" onclick="saveHandshakeSchedule()">💾 Salvar
+                                Agendamento</button>
+                        </div>
+
+                        <!-- Sound Manager -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🔊 Gerenciador de Sons</h3>
+                            </div>
+                            <p class="text-muted" style="font-size:0.8rem;">Sons para ataques Bluetooth/Glitch.</p>
+                            <div id="sound-list"
+                                style="max-height:150px;overflow-y:auto;background:var(--bg-tertiary);border-radius:8px;padding:10px;margin-bottom:10px;">
+                                <div class="text-muted">Carregando sons...</div>
+                            </div>
+                            <input type="file" id="sound-upload" accept=".wav,.mp3" style="display:none;"
+                                onchange="uploadSoundToSD(this.files[0])">
+                            <button class="btn btn-secondary" style="width:100%;"
+                                onclick="document.getElementById('sound-upload').click()">📤 Upload Som (SD)</button>
+                        </div>
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>⌚ Watch Controller</h3>
+                            </div>
+                            <div class="grid grid-2 gap-2">
+                                <button class="btn btn-secondary" onclick="sendCommand('watch_screenshot')">📸
+                                    Screenshot</button>
+                                <button class="btn btn-secondary" onclick="sendCommand('watch_vibrate')">📳
+                                    Vibrar</button>
+                                <button class="btn btn-secondary" onclick="sendCommand('watch_beep')">🔔 Beep</button>
+                                <button class="btn btn-secondary" onclick="sendCommand('watch_led')">💡 LED
+                                    Flash</button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- CONFIG VIEW -->
+                <section id="config" class="view">
+                    <div class="grid grid-2 gap-3">
+                        <!-- Display & Theme -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🎨 Display & Tema</h3>
+                            </div>
+                            <div class="settings-section">
+                                <div class="form-group"><label>Brilho: <span
+                                            id="brightness-value">100%</span></label><input type="range"
+                                        id="brightness-slider" min="0" max="255" value="255"
+                                        oninput="setBrightness(this.value)"></div>
+                                <div class="form-group"><label>Tema da Web</label>
+                                    <select id="theme-selector" onchange="setTheme(this.value)">
+                                        <option value="cyberpunk">🌃 Cyberpunk 2077</option>
+                                        <option value="stealth">🪖 Stealth Mode</option>
+                                        <option value="hacker">💚 Hacker Vision</option>
+                                        <option value="light">☀️ Light Mode</option>
+                                        <option value="dracula">🧛 Dracula</option>
+                                        <option value="nord">❄️ Nord</option>
+                                        <option value="monokai">🎨 Monokai</option>
+                                        <option value="solarized">🌅 Solarized</option>
+                                        <option value="tokyo-night">🌃 Tokyo Night</option>
+                                        <option value="gruvbox">🍂 Gruvbox</option>
+                                        <option value="one-dark">⚫ One Dark</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        <!-- Mascot Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🎭 Mascote</h3>
+                            </div>
+                            <div class="form-group"><label>Escolha o Mascote</label>
+                                <select id="mascot-selector" onchange="MascotSystem.setMascot(this.value); updateMascotIcons(this.value)">
+                                    <option value="dragon">🐉 Neura (Dragão)</option>
+                                    <option value="cat">🐱 Shadow (Gato)</option>
+                                    <option value="robot">🤖 X-9000 (Robô)</option>
+                                    <option value="skull">💀 Reaper (Caveira)</option>
+                                    <option value="ghost">👻 Phantom (Fantasma)</option>
+                                    <option value="phoenix">🦅 Blaze (Fênix)</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Personalidade</label>
+                                <select id="mascot-personality">
+                                    <option value="aggressive">🔥 Agressivo</option>
+                                    <option value="calm">😌 Calmo</option>
+                                    <option value="sarcastic">😏 Sarcástico</option>
+                                    <option value="evil">👿 Maligno</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" style="width:100%;margin-top:10px;"
+                                onclick="saveMascotConfig()">💾 Salvar Mascote</button>
+                        </div>
+                        <!-- AP Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>📡 Access Point</h3>
+                            </div>
+                            <div class="form-group"><label>Nome do AP (SSID)</label><input type="text" id="ap-ssid"
+                                    placeholder="LeleWatch_AP"></div>
+                            <div class="form-group"><label>Senha do AP</label><input type="password" id="ap-password"
+                                    placeholder="********"></div>
+                            <div class="form-group"><label>Canal</label><select id="ap-channel">
+                                    <option value="1">1</option>
+                                    <option value="6" selected>6</option>
+                                    <option value="11">11</option>
+                                </select></div>
+                            <div class="form-group"><label>IP do Gateway (Web)</label><select id="ap-ip">
+                                    <option value="192.168.4.1" selected>192.168.4.1 (Padrão)</option>
+                                    <option value="10.0.0.1">10.0.0.1 (Stealth)</option>
+                                    <option value="172.16.0.1">172.16.0.1 (Corp)</option>
+                                    <option value="192.168.1.1">192.168.1.1 (Home)</option>
+                                </select></div>
+                            <button class="btn btn-primary" onclick="saveAPConfig()">💾 Salvar AP</button>
+                        </div>
+                        <!-- Dashboard Security -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🔐 Segurança Dashboard</h3>
+                            </div>
+                            <div class="form-group"><label>Usuário</label><input type="text" id="dash-username"
+                                    placeholder="admin"></div>
+                            <div class="form-group"><label>Senha Atual</label><input type="password"
+                                    id="dash-password-old" placeholder="Senha atual"></div>
+                            <div class="form-group"><label>Nova Senha</label><input type="password"
+                                    id="dash-password-new" placeholder="Nova senha"></div>
+                            <button class="btn btn-warning" onclick="saveDashboardAuth()">🔐 Alterar
+                                Credenciais</button>
+                        </div>
+                        <!-- Sound & Volume -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🔊 Som & Volume</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Volume Master: <span id="volume-value">80%</span></label>
+                                <div class="volume-control">
+                                    <span class="volume-icon" onclick="toggleMute()">🔊</span>
+                                    <input type="range" id="volume-slider" min="0" max="100" value="80"
+                                        oninput="setVolume(this.value)">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label class="flex items-center gap-2"><input type="checkbox" id="sound-enabled" checked
+                                        onchange="toggleSound(this.checked)"><span>Sons Habilitados</span></label>
+                            </div>
+                            <button class="btn btn-secondary" onclick="playTestSound()">🔔 Testar Som</button>
+                        </div>
+                        <!-- OpenAI Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🤖 OpenAI API</h3>
+                            </div>
+                            <div class="form-group"><label>API Key</label><input type="password" id="openai-key"
+                                    placeholder="sk-..."></div>
+                            <div class="form-group"><label>Modelo</label>
+                                <select id="openai-model">
+                                    <option value="gpt-4o-mini">GPT-4o Mini (Rápido)</option>
+                                    <option value="gpt-4o">GPT-4o (Avançado)</option>
+                                    <option value="gpt-3.5-turbo">GPT-3.5 Turbo</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label>Max Tokens: <span
+                                        id="openai-tokens-val">500</span></label><input type="range" id="openai-tokens"
+                                    min="100" max="2000" value="500"
+                                    oninput="document.getElementById('openai-tokens-val').textContent=this.value"></div>
+                            <button class="btn btn-primary" onclick="saveOpenAIConfig()">💾 Salvar OpenAI</button>
+                        </div>
+                    </div>
+                    <!-- OnlineHashCrack -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔓 OnlineHashCrack</h3>
+                        </div>
+                        <div class="form-group"><label>Email</label>
+                            <input type="email" id="ohc-email" placeholder="seu@email.com">
+                        </div>
+                        <div class="form-group"><label>API Key (Opcional)</label>
+                            <input type="text" id="ohc-key" placeholder="Chave da API (se receber)">
+                        </div>
+                        <button class="btn btn-primary" onclick="saveOHCConfig()">💾 Salvar Config</button>
+                        <!-- OHC Stats Box -->
+                        <div id="ohc-stats-box"
+                            style="margin-top:15px;background:var(--bg-tertiary);padding:10px;border-radius:8px;display:none;">
+                            <h4
+                                style="margin:0 0 10px 0;font-size:0.9rem;border-bottom:1px solid var(--border-color);padding-bottom:5px;">
+                                📊 Uso Mensal</h4>
+                            <div style="font-size:0.85rem;">
+                                <div style="display:flex;justify-content:space-between;"><span>Tarefas:</span> <span
+                                        id="ohc-usage">0 / 100</span></div>
+                                <div style="background:#333;height:6px;border-radius:3px;margin:5px 0;overflow:hidden;">
+                                    <div id="ohc-progress" style="background:var(--primary);height:100%;width:0%;">
+                                    </div>
+                                </div>
+                                <div
+                                    style="display:flex;justify-content:space-between;color:var(--text-muted);font-size:0.75rem;">
+                                    <span>0 tasks</span><span>100 tasks</span>
+                                </div>
+                                <div style="margin-top:5px;font-size:0.8rem;color:var(--text-muted);">Reset em: <span
+                                        id="ohc-reset">--/--/----</span></div>
+                                <div style="margin-top:5px;font-size:0.8rem;color:var(--text-muted);">Key: <span
+                                        id="ohc-key-display">****</span></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- WiFi Power -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>📶 Potência WiFi TX</h3>
+                        </div>
+                        <div class="form-group"><label>Potência: <span id="txpower-value">20dBm</span></label><input
+                                type="range" id="txpower-slider" min="8" max="20" value="20"
+                                oninput="setTxPower(this.value)"></div>
+                    </div>
+                    <!-- Discord -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔔 Discord Webhook</h3>
+                        </div>
+                        <div class="form-group"><label>URL do Webhook</label><input type="text"
+                                id="discord-webhook-input" placeholder="https://discord.com/api/webhooks/..."></div>
+                        <div class="grid grid-2 gap-2">
+                            <button class="btn btn-secondary"
+                                onclick="setDiscordWebhook(document.getElementById('discord-webhook-input').value)">💾
+                                Salvar</button>
+                            <button class="btn btn-primary"
+                                onclick="sendDiscordNotification('Teste do LeleWatch! 🐉','success')">🧪
+                                Testar</button>
+                        </div>
+                    </div>
+                    <!-- Modules -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>🔌 Módulos</h3>
+                        </div>
+                        <div style="display:flex;flex-direction:column;gap:15px;">
+                            <label class="flex items-center justify-between"><span>WiFi</span><label
+                                    class="switch"><input type="checkbox" checked
+                                        onchange="sendCommand('toggle_wifi',{enabled:this.checked})"><span
+                                        class="slider round"></span></label></label>
+                            <label class="flex items-center justify-between"><span>Bluetooth</span><label
+                                    class="switch"><input type="checkbox" checked
+                                        onchange="sendCommand('toggle_ble',{enabled:this.checked})"><span
+                                        class="slider round"></span></label></label>
+                            <label class="flex items-center justify-between"><span>GPS (se houver)</span><label
+                                    class="switch"><input type="checkbox"
+                                        onchange="sendCommand('toggle_gps',{enabled:this.checked})"><span
+                                        class="slider round"></span></label></label>
+                            <label class="flex items-center justify-between"><span>IR Blaster</span><label
+                                    class="switch"><input type="checkbox" checked
+                                        onchange="sendCommand('toggle_ir',{enabled:this.checked})"><span
+                                        class="slider round"></span></label></label>
+                        </div>
+                    </div>
+            </div>
+            <!-- System Actions -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3>⚙️ Sistema</h3>
+                </div>
+                <div class="grid grid-4 gap-2">
+                    <button class="btn btn-secondary" onclick="sendCommand('reboot')">🔄 Reiniciar</button>
+                    <button class="btn btn-secondary" onclick="sendCommand('backup')">💾 Backup</button>
+                    <button class="btn btn-secondary" onclick="exportLogs()">📋 Exportar Logs</button>
+                    <button class="btn btn-danger"
+                        onclick="if(confirm('Isso apagará TODAS as configurações!'))sendCommand('factory_reset')">⚠️
+                        Factory Reset</button>
+                </div>
+            </div>
+            <!-- About -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h3>ℹ️ Sobre</h3>
+                </div>
+                <div class="grid grid-2 gap-2" style="font-size:0.85rem;">
+                    <div><strong>Firmware:</strong> <span id="fw-version">v2.0.0</span></div>
+                    <div><strong>Hardware:</strong> ESP32-S3 Touch AMOLED 1.8</div>
+                    <div><strong>MAC WiFi:</strong> <span id="mac-wifi">--:--:--:--:--:--</span></div>
+                    <div><strong>MAC BLE:</strong> <span id="mac-ble">--:--:--:--:--:--</span></div>
+                </div>
+            </div>
+    </div>
+    </section>
+    </div>
+    </main>
+    </div>
+    <!-- Scripts -->
+    <script src="js/websocket.js"></script>
+    <script src="js/effects/matrix-rain.js"></script>
+    <script src="js/effects/particles.js"></script>
+    <script src="js/effects/heatmap.js"></script>
+    <script src="js/effects/network-3d.js"></script>
+    <script src="js/components/dragon.js"></script>
+    <script src="js/components/mascots.js"></script>
+    <script src="js/eastereggs.js"></script>
+    <script src="js/features.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/voice-control.js"></script>
+    <script src="js/theme-editor.js"></script>
+    <script src="js/pages/handshakes.js"></script>
+    <script src="js/pages/password-strength.js"></script>
+    <script src="js/pages/captive-portal.js"></script>
+    <script src="js/pages/attack-timeline.js"></script>
+    <script src="js/pages/evil-twin-builder.js"></script>
+    <script src="js/pages/mascot-selector.js"></script>
+    <script src="js/pages/watch-controller.js"></script>
+    <script src="js/pages/wallpapers.js"></script>
+    <script src="js/pages/sounds.js"></script>
+    <script src="js/pages/notifications.js"></script>
+    <script src="js/security/totp.js"></script>
+    <script src="js/app.js"></script>
+    <script src="js/attacks.js"></script>
+</body>
+
+</html>

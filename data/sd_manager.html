@@ -1,0 +1,85 @@
+function bytesToSize(bytes) {
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  if (bytes == 0) return '0 B';
+  const i = parseInt(Math.floor(Math.log(bytes) / Math.log(1024)));
+  return (bytes / Math.pow(1024, i)).toFixed(2) + ' ' + sizes[i];
+}
+
+function refresh() {
+  fetch('/sd_json')
+    .then(r => r.json())
+    .then(data => {
+      if (!data.online) {
+        document.getElementById('sd_status').innerHTML = "<span style='color:#f00'>SD CARD OFFLINE</span>";
+        document.getElementById('sd_info').style.display = "none";
+        document.querySelector('#filelist tbody').innerHTML = "";
+        return;
+      }
+
+      document.getElementById('sd_status').innerHTML = "SD CARD ONLINE - TUDO PRONTO";
+      document.getElementById('sd_info').style.display = "block";
+      document.getElementById('sd_info').innerHTML = `
+        <b>Tipo:</b> ${data.type} | 
+        <b>Velocidade:</b> ${data.speed} MHz | 
+        <b>Total:</b> ${data.total_mb} MB | 
+        <b>Livre:</b> ${data.free_mb} MB
+      `;
+
+      const tbody = document.querySelector('#filelist tbody');
+      tbody.innerHTML = '';
+
+      data.files.forEach(file => {
+        let tr = document.createElement('tr');
+
+        let nameTd = document.createElement('td');
+        nameTd.innerHTML = file.is_dir ? `<b>${file.name}/</b>` : file.name;
+
+        let sizeTd = document.createElement('td');
+        sizeTd.textContent = file.is_dir ? "PASTA" : bytesToSize(file.size);
+
+        let actionTd = document.createElement('td');
+        if (!file.is_dir) {
+          let dl = document.createElement('a');
+          dl.href = "/sd_download?file=" + encodeURIComponent(file.path);
+          dl.textContent = "DOWNLOAD";
+          dl.className = "btn";
+          dl.style.background = "#0088ff";
+          actionTd.appendChild(dl);
+        }
+        let del = document.createElement('button');
+        del.textContent = "APAGAR";
+        del.className = "btn danger";
+        del.onclick = () => {
+          if(confirm(`Apagar ${file.name} pra sempre?`)) {
+            fetch('/sd_delete?file=' + encodeURIComponent(file.path));
+            setTimeout(refresh, 1000);
+          }
+        };
+        actionTd.appendChild(del);
+
+        tr.appendChild(nameTd);
+        tr.appendChild(sizeTd);
+        tr.appendChild(actionTd);
+        tbody.appendChild(tr);
+      });
+    })
+    .catch(() => {
+      document.getElementById('sd_status').innerHTML = "<span style='color:#f00'>ERRO DE COMUNICAÇÃO</span>";
+    });
+}
+
+document.getElementById('upload').addEventListener('change', function(e) {
+  Array.from(e.target.files).forEach(file => {
+    let fr = new FileReader();
+    fr.onload = function() {
+      let xhr = new XMLHttpRequest();
+      xhr.open('POST', '/sd_upload?filename=' + encodeURIComponent(file.name));
+      xhr.send(fr.result);
+      xhr.onload = () => setTimeout(refresh, 1000);
+    };
+    fr.readAsArrayBuffer(file);
+  });
+});
+
+refresh();
+setInterval(refresh, 8000);

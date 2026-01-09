@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">WavePwn Dashboard</string>
+
+    <!-- Splash / conexão -->
+    <string name="status_checking_connection">Verificando conexão com o WavePwn...</string>
+    <string name="status_connecting_device">Conectando ao dispositivo WavePwn em 192.168.4.1...</string>
+    <string name="status_not_on_wifi">Você não está conectado à rede Wi‑Fi do WavePwn.\nConecte-se à rede criada pelo dispositivo e toque em &quot;Tentar novamente&quot;.</string>
+    <string name="status_device_not_found">Não foi possível encontrar o dispositivo WavePwn em 192.168.4.1.\nVerifique se o ESP32 está ligado e se o Wi‑Fi do celular está conectado ao AP dele.</string>
+
+    <string name="open_wifi_settings">Abrir Configurações Wi‑Fi</string>
+    <string name="retry">Tentar novamente</string>
+</resources>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeleWatch - IR CHAOS 2025</title>
+  <style>
+    :root {
+      --primary: #00ff88;
+      --danger: #ff0044;
+      --bg: #000;
+      --card: rgba(15, 30, 60, 0.9);
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      background:#000;
+      color:var(--primary);
+      font-family:'Orbitron','Segoe UI',sans-serif;
+      min-height:100vh;
+      overflow-x:hidden;
+      padding:20px;
+    }
+    .dragon-header {
+      text-align:center;
+      font-size:120px;
+      margin:30px 0;
+      animation:float 6s infinite;
+      text-shadow:0 0 40px var(--primary);
+    }
+    h1 {
+      text-align:center;
+      font-size:3rem;
+      background:linear-gradient(90deg,#00ffff,#ff00ff,#ffff00);
+      -webkit-background-clip:text;
+      -webkit-text-fill-color:transparent;
+      text-shadow:0 0 0 40px rgba(0,255,255,0.5);
+      margin:20px 0;
+    }
+    .nuke-btn {
+      width:100%;
+      padding:40px;
+      font-size:3rem;
+      background:#300;
+      color:#f00;
+      border:5px solid #f00;
+      border-radius:30px;
+      margin:40px 0;
+      box-shadow:0 0 80px #f00;
+      animation:pulse 1s infinite;
+      cursor:pointer;
+      font-weight:900;
+      text-transform:uppercase;
+    }
+    .grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(300px,1fr));
+      gap:25px;
+      margin-top:40px;
+    }
+    .card {
+      background:var(--card);
+      border:3px solid var(--primary);
+      border-radius:25px;
+      padding:30px;
+      box-shadow:0 0 50px rgba(0,255,136,0.4);
+      text-align:center;
+    }
+    .btn {
+      width:100%;
+      padding:25px;
+      margin:15px 0;
+      border-radius:20px;
+      border:none;
+      font-size:1.6rem;
+      font-weight:bold;
+      cursor:pointer;
+      transition:0.4s;
+      box-shadow:0 0 30px rgba(0,255,136,0.6);
+    }
+    .btn:hover { transform:scale(1.08); }
+    .btn.power { background:var(--primary); color:#000; }
+    .btn.netflix { background:#e50914; color:#fff; }
+    .btn.ar { background:#0088ff; color:#fff; }
+    .btn.tv { background:#6600ff; color:#fff; }
+    .learn-btn {
+      background:#003366;
+      color:#00ffff;
+      border:3px dashed #00ffff;
+      animation:glow 2s infinite;
+    }
+    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-30px); } }
+    @keyframes pulse { 0%,100% { box-shadow:0 0 80px #f00; } 50% { box-shadow:0 0 120px #f00; } }
+    @keyframes glow { 0%,100% { box-shadow:0 0 20px #00ffff; } 50% { box-shadow:0 0 40px #00ffff; } }
+  </style>
+</head>
+
+<body>
+  <div class="dragon-header">DRAGÃO</div>
+  <h1>IR CHAOS 2025</h1>
+
+  <button class="nuke-btn" onclick="tvNuke()">TV NUKE DA VIZINHANÇA</button>
+
+  <div class="grid" id="buttons"></div>
+
+  <div class="card">
+    <button class="btn learn-btn" onclick="window.location.href='/learn.html'">
+      APRENDER NOVO CONTROLE
+    </button>
+  </div>
+
+  <script src="/ir_control.js"></script>
+</body>
+</html>

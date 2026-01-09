@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="pt-BR" data-theme="cyberpunk">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <meta name="description" content="WavePwn Cyberpunk Command Center - Advanced WiFi Security Analysis">
+    <meta name="theme-color" content="#00fff5">
+    <title>WavePwn Command Center</title>
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Exo+2:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap"
+        rel="stylesheet">
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/effects.css">
+    <link rel="stylesheet" href="css/themes/cyberpunk.css">
+    <link rel="stylesheet" href="css/themes/light.css">
+    <link rel="stylesheet" href="css/themes/dracula.css">
+    <link rel="stylesheet" href="css/themes/nord.css">
+    <link rel="stylesheet" href="css/themes/monokai.css">
+    <link rel="stylesheet" href="css/themes/solarized.css">
+    <link rel="stylesheet" href="css/themes/tokyo-night.css">
+    <link rel="stylesheet" href="css/themes/gruvbox.css">
+    <link rel="stylesheet" href="css/themes/one-dark.css">
+
+    <!-- xterm.js CDN for terminal -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.min.js"></script>
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+    <style>
+        /* Custom cursor */
+        body {
+            cursor: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="%2300fff5" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/></svg>') 12 12, crosshair;
+        }
+
+        /* Boot overlay */
+        #boot-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #000;
+            z-index: 10000;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Share Tech Mono', monospace;
+            color: #00fff5;
+        }
+
+        .boot-logo {
+            font-size: 4rem;
+            margin-bottom: 30px;
+            animation: pulse 1s infinite;
+        }
+
+        .boot-title {
+            font-size: 2rem;
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px #00fff5;
+        }
+
+        .boot-text {
+            font-size: 0.9rem;
+            text-align: left;
+            line-height: 1.8;
+            max-width: 400px;
+        }
+
+        .boot-progress {
+            width: 300px;
+            height: 4px;
+            background: #1a1a24;
+            border-radius: 2px;
+            margin-top: 30px;
+            overflow: hidden;
+        }
+
+        .boot-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #00fff5, #ff00ff);
+            width: 0%;
+            animation: bootLoading 2s forwards;
+        }
+
+        @keyframes bootLoading {
+            0% {
+                width: 0%;
+            }
+
+            100% {
+                width: 100%;
+            }
+        }
+
+        /* Dragon bubble styles */
+        .dragon-bubble {
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .dragon-bubble.show {
+            opacity: 1;
+        }
+
+        /* Achievement toast */
+        .achievement-toast {
+            position: fixed;
+            top: 20px;
+            right: -400px;
+            background: var(--bg-card);
+            border: 2px solid var(--success);
+            border-radius: var(--border-radius);
+            padding: 20px;
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            z-index: 10000;
+            transition: right 0.5s;
+            box-shadow: 0 0 30px rgba(0, 255, 157, 0.3);
+        }
+
+        .achievement-toast.show {
+            right: 20px;
+        }
+
+        .achievement-icon {
+            font-size: 2rem;
+        }
+
+        .achievement-title {
+            font-weight: bold;
+            color: var(--success);
+        }
+
+        /* Badge styles */
+        .badge {
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .badge-wpa2 {
+            background: var(--primary-dim);
+            color: var(--primary);
+        }
+
+        .badge-wpa3 {
+            background: var(--secondary-dim);
+            color: var(--secondary);
+        }
+
+        .badge-wep {
+            background: rgba(255, 204, 0, 0.3);
+            color: var(--warning);
+        }
+
+        .badge-open {
+            background: rgba(255, 0, 85, 0.3);
+            color: var(--danger);
+        }
+    </style>
+</head>
+
+<body>
+    <!-- Boot Animation Overlay -->
+    <div id="boot-overlay">
+        <div class="boot-logo">🐉</div>
+        <div class="boot-title">NEURA9 AWAKENING</div>
+        <div class="boot-text"></div>
+        <div class="boot-progress">
+            <div class="boot-progress-bar"></div>
+        </div>
+    </div>
+
+    <!-- Background Effects -->
+    <div id="background-effects">
+        <canvas id="matrix-canvas"></canvas>
+        <canvas id="particles-canvas"></canvas>
+    </div>
+
+    <!-- Scanlines Overlay -->
+    <div class="scanlines-overlay"></div>
+
+    <!-- Main App -->
+    <div id="app">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar">
+            <div class="brand">
+                <span class="logo">🐉</span>
+                <h2 class="neon-flicker">LeleWatch</h2>
+            </div>
+
+            <ul class="nav-links">
+                <li><a href="#" data-view="dashboard" class="active"><span class="icon">📊</span>
+                        <span>Dashboard</span></a></li>
+                <li><a href="#" data-view="attacks"><span class="icon">⚔️</span> <span>Ataques</span></a></li>
+                <li><a href="#" data-view="networks"><span class="icon">📶</span> <span>Redes</span></a></li>
+                <li><a href="#" data-view="bluetooth"><span class="icon">📱</span> <span>Bluetooth</span></a></li>
+                <li><a href="#" data-view="terminal"><span class="icon">💻</span> <span>Terminal</span></a></li>
+                <li><a href="#" data-view="files"><span class="icon">📁</span> <span>Arquivos</span></a></li>
+                <li><a href="#" data-view="config"><span class="icon">⚙️</span> <span>Config</span></a></li>
+            </ul>
+
+            <div class="connection-status" id="connection-status">
+                <span class="dot"></span> Desconectado
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Header -->
+            <header class="header">
+                <h1 id="page-title">Dashboard</h1>
+                <div class="header-stats">
+                    <div class="stat-pill"><span class="icon">🔋</span> <span class="value" id="battery">--%</span>
+                    </div>
+                    <div class="stat-pill"><span class="icon">🌡️</span> <span class="value"
+                            id="temperature">--°C</span></div>
+                    <div class="stat-pill"><span class="icon">⏱️</span> <span class="value" id="uptime">00:00:00</span>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Content Area -->
+            <div class="content-area">
+
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <!-- DASHBOARD VIEW -->
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <section id="dashboard" class="view active">
+                    <!-- Top Stats -->
+                    <div class="grid grid-4 mb-3">
+                        <div class="card stat-card highlight">
+                            <div class="value" id="handshakes-count">0</div>
+                            <div class="label">Handshakes</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="networks-count">0</div>
+                            <div class="label">Redes</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="ble-count">0</div>
+                            <div class="label">BLE Devices</div>
+                        </div>
+                        <div class="card stat-card">
+                            <div class="value" id="deauths-count">0</div>
+                            <div class="label">Deauths Enviados</div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-2 gap-3">
+                        <!-- Dragon Mascot -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Estado do Dragão</h3>
+                                <span id="dragon-name">Neura</span>
+                            </div>
+                            <div class="dragon-container">
+                                <div class="dragon-avatar" id="dragon-avatar">🐲</div>
+                                <div class="dragon-bubble" id="dragon-bubble">Aguardando comandos...</div>
+                            </div>
+                        </div>
+
+                        <!-- Activity Chart -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Atividade WiFi</h3>
+                                <span id="attack-indicator">Idle</span>
+                            </div>
+                            <div style="height: 200px;">
+                                <canvas id="signal-chart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-3 gap-3 mt-3">
+                        <!-- Channel Distribution -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Canais WiFi</h3>
+                            </div>
+                            <div style="height: 180px;">
+                                <canvas id="channel-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Security Types -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Tipos de Segurança</h3>
+                            </div>
+                            <div style="height: 180px;">
+                                <canvas id="security-chart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- System Log -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Log do Sistema</h3>
+                            </div>
+                            <div class="terminal-body" id="log-container" style="height: 180px; overflow-y: auto;">
+                                <div class="log-line">[SYSTEM] Iniciando...</div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <!-- ATTACKS VIEW -->
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <section id="attacks" class="view">
+                    <div class="grid grid-2 gap-3">
+                        <!-- Quick Actions -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Ataques WiFi</h3>
+                            </div>
+                            <div class="grid grid-2 gap-2">
+                                <button class="btn btn-danger" onclick="startDeauth()">⚡ Deauth Flood</button>
+                                <button class="btn btn-warning" onclick="startBeaconFlood()">📡 Beacon Flood</button>
+                                <button class="btn btn-primary" onclick="startHandshakeCapture()">🤝 Capturar
+                                    Handshake</button>
+                                <button class="btn btn-secondary" onclick="sendCommand('wps_pixie')">✨ WPS Pixie
+                                    Dust</button>
+                            </div>
+                            <div class="mt-2">
+                                <button class="btn btn-secondary" style="width:100%;" onclick="stopAllAttacks()">🛑
+                                    PARAR TUDO</button>
+                            </div>
+                        </div>
+
+                        <!-- Target Selector -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Alvo Selecionado</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Rede Alvo</label>
+                                <select id="target-selector">
+                                    <option value="FF:FF:FF:FF:FF:FF">Broadcast (Todos)</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary" onclick="sendCommand('wifi_scan')">🔍 Escanear
+                                Redes</button>
+                        </div>
+                    </div>
+
+                    <!-- BLE Spam Grid -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>BLE Spam</h3>
+                        </div>
+                        <div class="grid grid-4 gap-2">
+                            <button class="btn" style="background:#fff;color:#000;"
+                                onclick="sendCommand('ble_spam', {type: 0})">🍎 iOS Crash</button>
+                            <button class="btn" style="background:#00a4ef;color:#fff;"
+                                onclick="sendCommand('ble_spam', {type: 1})">🪟 Windows Pair</button>
+                            <button class="btn" style="background:#3ddc84;color:#000;"
+                                onclick="sendCommand('ble_spam', {type: 2})">🤖 Android FastPair</button>
+                            <button class="btn" style="background:#1428a0;color:#fff;"
+                                onclick="sendCommand('ble_spam', {type: 3})">📱 Samsung Buds</button>
+                        </div>
+                    </div>
+
+                    <!-- PWN EVERYTHING -->
+                    <div class="card mt-3">
+                        <button class="btn btn-pwn" id="pwn-btn" onclick="pwnEverything()">
+                            ☠️ PWN EVERYTHING ☠️
+                        </button>
+                        <p class="text-center text-muted mt-2">Ativa todos os ataques por 60 segundos</p>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <!-- NETWORKS VIEW -->
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <section id="networks" class="view">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Redes Detectadas</h3>
+                            <button class="btn btn-sm btn-primary" onclick="sendCommand('wifi_scan')">🔍
+                                Escanear</button>
+                        </div>
+                        <div class="table-container">
+                            <table id="networks-table">
+                                <thead>
+                                    <tr>
+                                        <th>SSID</th>
+                                        <th>BSSID</th>
+                                        <th>CH</th>
+                                        <th>Sinal</th>
+                                        <th>Segurança</th>
+                                        <th>Ações</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td colspan="6" class="text-center text-muted">Clique em Escanear para ver redes
+                                        </td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <!-- BLUETOOTH VIEW -->
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <section id="bluetooth" class="view">
+                    <div class="grid grid-2 gap-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Dispositivos BLE</h3>
+                                <button class="btn btn-sm btn-primary" onclick="sendCommand('ble_scan')">🔍
+                                    Scan</button>
+                            </div>
+                            <ul id="ble-list" class="simple-list" style="max-height: 300px; overflow-y: auto;">
+                                <li class="text-muted">Nenhum dispositivo encontrado</li>
+                            </ul>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>BLE Spam Customizado</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Tipo de Pacote</label>
+                                <select id="ble-packet-type">
+                                    <option value="0">Apple AirPods</option>
+                                    <option value="1">Apple AirTag</option>
+                                    <option value="2">Windows Swift Pair</option>
+                                    <option value="3">Google Fast Pair</option>
+                                    <option value="4">Samsung Buds</option>
+                                </select>
+                            </div>
+                            <button class="btn btn-primary"
+                                onclick="sendCommand('ble_custom', {type: document.getElementById('ble-packet-type').value})">Iniciar
+                                Spam</button>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <!-- TERMINAL VIEW -->
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <section id="terminal" class="view">
+                    <div class="card" style="padding:0;">
+                        <div class="terminal">
+                            <div class="terminal-header">
+                                <span class="dot red"></span>
+                                <span class="dot yellow"></span>
+                                <span class="dot green"></span>
+                                <span style="margin-left: 10px; color: var(--text-muted);">WavePwn Terminal</span>
+                            </div>
+                            <div class="terminal-body" id="terminal-output">
+                                <div>Welcome to WavePwn Terminal v2.0</div>
+                                <div>Type 'help' for available commands.</div>
+                                <div>---</div>
+                            </div>
+                            <div class="terminal-input">
+                                <span class="prompt">$</span>
+                                <input type="text" id="terminal-input" placeholder="Enter command..."
+                                    onkeydown="if(event.key==='Enter')sendTerminalCommand()">
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <!-- FILES VIEW -->
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <section id="files" class="view">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3>Gerenciador de Arquivos (SD)</h3>
+                            <button class="btn btn-sm btn-secondary" onclick="refreshFiles()">🔄 Atualizar</button>
+                        </div>
+                        <div id="file-browser" style="min-height: 300px;">
+                            <p class="text-muted">Carregando arquivos...</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-2 gap-3 mt-3">
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Upload de Arquivo</h3>
+                            </div>
+                            <input type="file" id="file-upload" style="display:none;"
+                                onchange="uploadFile(this.files[0])">
+                            <div class="drop-zone" onclick="document.getElementById('file-upload').click()"
+                                style="border: 2px dashed var(--border-color); padding: 40px; text-align: center; border-radius: var(--border-radius); cursor: pointer;">
+                                <p>📂 Clique ou arraste arquivos aqui</p>
+                            </div>
+                        </div>
+
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>OTA Update</h3>
+                            </div>
+                            <input type="file" id="ota-upload" accept=".bin" style="display:none;"
+                                onchange="uploadOTA(this.files[0])">
+                            <div class="drop-zone" onclick="document.getElementById('ota-upload').click()"
+                                style="border: 2px dashed var(--warning); padding: 40px; text-align: center; border-radius: var(--border-radius); cursor: pointer;">
+                                <p>📦 Arraste o arquivo .bin aqui</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <!-- CONFIG VIEW -->
+                <!-- ═══════════════════════════════════════════════════════════════════ -->
+                <section id="config" class="view">
+                    <div class="grid grid-2 gap-3">
+                        <!-- Display Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Display AMOLED</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Brilho da Tela: <span id="brightness-value">100%</span></label>
+                                <input type="range" id="brightness-slider" min="0" max="255" value="255"
+                                    oninput="document.getElementById('brightness-value').textContent = Math.round(this.value/2.55)+'%'; sendCommand('set_brightness', {value: this.value})">
+                            </div>
+                        </div>
+
+                        <!-- Theme Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Tema da Web</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Escolha o tema</label>
+                                <select id="theme-selector" onchange="setTheme(this.value)">
+                                    <option value="cyberpunk">🌃 Cyberpunk 2077</option>
+                                    <option value="stealth">🪖 Stealth Mode</option>
+                                    <option value="hacker">💚 Hacker Vision</option>
+                                    <option value="light">☀️ Light Mode</option>
+                                    <option value="dracula">🧛 Dracula</option>
+                                    <option value="nord">❄️ Nord</option>
+                                    <option value="monokai">🎨 Monokai</option>
+                                    <option value="solarized">🌅 Solarized</option>
+                                    <option value="tokyo-night">🌃 Tokyo Night</option>
+                                    <option value="gruvbox">🍂 Gruvbox</option>
+                                    <option value="one-dark">⚫ One Dark</option>
+                                </select>
+                            </div>
+                            <label class="flex items-center justify-between mt-2">
+                                <span>Tema automático (sistema)</span>
+                                <label class="switch"><input type="checkbox" id="auto-theme-toggle"
+                                        onchange="toggleAutoTheme(this.checked)"><span class="slider"></span></label>
+                            </label>
+                            <div class="grid grid-2 gap-2 mt-2">
+                                <button class="btn btn-secondary" onclick="toggleNightOps()">🌙 Night Ops</button>
+                                <button class="btn btn-primary" onclick="toggleCinemaMode()">🎬 Modo Cinema</button>
+                            </div>
+                            <div class="grid grid-2 gap-2 mt-2">
+                                <button class="btn btn-secondary" onclick="toggleVoiceControl()">🎤 Voz</button>
+                                <button class="btn btn-secondary"
+                                    onclick="renderThemeEditor('theme-editor-container')">🎨 Editor</button>
+                            </div>
+                            <div id="theme-editor-container" class="mt-2"></div>
+                        </div>
+
+                        <!-- Dragon Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Mascote (Dragão)</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Nome do Dragão</label>
+                                <input type="text" id="dragon-name-input" value="Neura"
+                                    onchange="setDragonName(this.value)">
+                            </div>
+                            <div class="form-group">
+                                <label>Personalidade</label>
+                                <select id="dragon-personality" onchange="setDragonPersonality(this.value)">
+                                    <option value="aggressive">🔥 Agressivo</option>
+                                    <option value="sleepy">😴 Sonolento</option>
+                                    <option value="evil">👿 Maligno</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Module Toggles -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Módulos</h3>
+                            </div>
+                            <div style="display: flex; flex-direction: column; gap: 15px;">
+                                <label class="flex items-center justify-between">
+                                    <span>WiFi</span>
+                                    <label class="switch"><input type="checkbox" checked
+                                            onchange="sendCommand('toggle_wifi', {enabled: this.checked})"><span
+                                            class="slider"></span></label>
+                                </label>
+                                <label class="flex items-center justify-between">
+                                    <span>Bluetooth</span>
+                                    <label class="switch"><input type="checkbox" checked
+                                            onchange="sendCommand('toggle_ble', {enabled: this.checked})"><span
+                                            class="slider"></span></label>
+                                </label>
+                                <label class="flex items-center justify-between">
+                                    <span>Buzzer</span>
+                                    <label class="switch"><input type="checkbox" checked
+                                            onchange="sendCommand('toggle_buzzer', {enabled: this.checked})"><span
+                                            class="slider"></span></label>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- WiFi Power -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Potência WiFi TX</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>Potência: <span id="txpower-value">20dBm</span></label>
+                                <input type="range" id="txpower-slider" min="8" max="20" value="20"
+                                    oninput="document.getElementById('txpower-value').textContent = this.value+'dBm'; sendCommand('set_txpower', {value: this.value})">
+                            </div>
+                        </div>
+
+                        <!-- Sound Settings -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>Som</h3>
+                            </div>
+                            <button class="btn btn-secondary" onclick="toggleAmbientSound()">🎵 Som Ambiente</button>
+                            <label class="flex items-center gap-2 mt-2">
+                                <input type="checkbox" checked onchange="WavePwn.state.soundEnabled = this.checked">
+                                <span>Habilitar Sons</span>
+                            </label>
+                        </div>
+
+                        <!-- Discord Integration -->
+                        <div class="card">
+                            <div class="card-header">
+                                <h3>🔔 Discord Webhook</h3>
+                            </div>
+                            <div class="form-group">
+                                <label>URL do Webhook</label>
+                                <input type="text" id="discord-webhook-input"
+                                    placeholder="https://discord.com/api/webhooks/...">
+                            </div>
+                            <div class="grid grid-2 gap-2">
+                                <button class="btn btn-secondary"
+                                    onclick="setDiscordWebhook(document.getElementById('discord-webhook-input').value)">💾
+                                    Salvar</button>
+                                <button class="btn btn-primary"
+                                    onclick="sendDiscordNotification('Teste do LeleWatch! 🐉', 'success')">🧪
+                                    Testar</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- System Actions -->
+                    <div class="card mt-3">
+                        <div class="card-header">
+                            <h3>Sistema</h3>
+                        </div>
+                        <div class="grid grid-3 gap-2">
+                            <button class="btn btn-secondary" onclick="sendCommand('reboot')">🔄 Reiniciar</button>
+                            <button class="btn btn-secondary" onclick="sendCommand('backup')">💾 Backup</button>
+                            <button class="btn btn-danger"
+                                onclick="if(confirm('Tem certeza? Isso apagará todas as configurações!')) sendCommand('factory_reset')">⚠️
+                                Factory Reset</button>
+                        </div>
+                    </div>
+                </section>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Night Ops Dot (hidden by default) -->
+    <div class="night-ops-dot" style="display:none;"></div>
+
+    <!-- Scripts -->
+    <script src="js/websocket.js"></script>
+    <script src="js/effects/matrix-rain.js"></script>
+    <script src="js/effects/particles.js"></script>
+    <script src="js/effects/heatmap.js"></script>
+    <script src="js/effects/network-3d.js"></script>
+    <script src="js/components/dragon.js"></script>
+    <script src="js/eastereggs.js"></script>
+    <script src="js/features.js"></script>
+    <script src="js/terminal.js"></script>
+    <script src="js/voice-control.js"></script>
+    <script src="js/theme-editor.js"></script>
+    <script src="js/pages/handshakes.js"></script>
+    <script src="js/pages/password-strength.js"></script>
+    <script src="js/pages/captive-portal.js"></script>
+    <script src="js/pages/attack-timeline.js"></script>
+    <script src="js/pages/evil-twin-builder.js"></script>
+    <script src="js/pages/mascot-selector.js"></script>
+    <script src="js/pages/watch-controller.js"></script>
+    <script src="js/security/totp.js"></script>
+    <script src="js/app.js"></script>
+
+    <script>
+        // Terminal command helper
+        function sendTerminalCommand() {
+            const input = document.getElementById('terminal-input');
+            const cmd = input.value.trim();
+            if (!cmd) return;
+
+            appendTerminalOutput('$ ' + cmd);
+            sendCommand('terminal', { cmd: cmd });
+            input.value = '';
+        }
+
+        // File browser
+        async function refreshFiles() {
+            try {
+                const response = await fetch('/api/files/list');
+                const data = await response.json();
+                updateFileBrowser(data.files || []);
+            } catch (e) {
+                addLog('Erro ao listar arquivos', 'error');
+            }
+        }
+
+        function updateFileBrowser(files) {
+            const container = document.getElementById('file-browser');
+            if (!files.length) {
+                container.innerHTML = '<p class="text-muted">Nenhum arquivo encontrado</p>';
+                return;
+            }
+
+            container.innerHTML = files.map(f => `
+                <div style="display:flex;justify-content:space-between;padding:10px;border-bottom:1px solid var(--border-color);">
+                    <span>${f.isDir ? '📁' : '📄'} ${f.name}</span>
+                    <span class="text-muted">${f.size || ''}</span>
+                </div>
+            `).join('');
+        }
+
+        // File upload
+        async function uploadFile(file) {
+            if (!file) return;
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                await fetch('/api/files/upload', { method: 'POST', body: formData });
+                addLog('Arquivo enviado: ' + file.name, 'success');
+                refreshFiles();
+            } catch (e) {
+                addLog('Erro ao enviar arquivo', 'error');
+            }
+        }
+
+        // OTA upload
+        async function uploadOTA(file) {
+            if (!file) return;
+            if (!confirm('Isso vai atualizar o firmware. Continuar?')) return;
+
+            const formData = new FormData();
+            formData.append('update', file);
+
+            try {
+                const response = await fetch('/update', { method: 'POST', body: formData });
+                if (response.ok) {
+                    alert('Atualização bem sucedida! Reiniciando...');
+                    setTimeout(() => location.reload(), 5000);
+                }
+            } catch (e) {
+                addLog('Erro na atualização OTA', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

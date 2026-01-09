@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Ícone simples com forma que remete a sinal / ondas -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M18,42 L54,18 L90,42 L82,50 L54,30 L26,50 Z" />
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M30,56 L54,38 L78,56 L71,63 L54,50 L37,63 Z" />
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M48,66 L60,66 L60,78 L48,78 Z" />
+</vector>

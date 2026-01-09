@@ -1,0 +1,37 @@
+.pio/build/wavepwn_final/lib47c/libraries/lvgl/src/misc/lv_mem.c.o: \
+ lib/libraries/lvgl/src/misc/lv_mem.c \
+ lib/libraries/lvgl/src/misc/lv_mem.h \
+ lib/libraries/lvgl/src/misc/../lv_conf_internal.h \
+ lib/libraries/lvgl/src/misc/../lv_conf_kconfig.h \
+ /home/lele/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/qio_qspi/include/sdkconfig.h \
+ /home/lele/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_common/include/esp_attr.h \
+ src/lv_conf.h lib/libraries/lvgl/src/misc/lv_types.h \
+ lib/libraries/lvgl/src/misc/lv_tlsf.h \
+ lib/libraries/lvgl/src/misc/lv_gc.h lib/libraries/lvgl/src/misc/lv_ll.h \
+ lib/libraries/lvgl/src/misc/lv_timer.h \
+ lib/libraries/lvgl/src/misc/../hal/lv_hal_tick.h \
+ lib/libraries/lvgl/src/misc/../hal/../lv_conf_internal.h \
+ lib/libraries/lvgl/src/misc/../draw/lv_img_cache.h \
+ lib/libraries/lvgl/src/misc/../draw/lv_img_decoder.h \
+ lib/libraries/lvgl/src/misc/../draw/../lv_conf_internal.h \
+ lib/libraries/lvgl/src/misc/../draw/lv_img_buf.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_color.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/../lv_conf_internal.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_assert.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_log.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_types.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_mem.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_math.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_area.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_fs.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_types.h \
+ lib/libraries/lvgl/src/misc/../draw/lv_draw_mask.h \
+ lib/libraries/lvgl/src/misc/../draw/../misc/lv_math.h \
+ lib/libraries/lvgl/src/misc/../core/lv_obj_pos.h \
+ lib/libraries/lvgl/src/misc/../core/../misc/lv_area.h \
+ lib/libraries/lvgl/src/misc/lv_assert.h \
+ lib/libraries/lvgl/src/misc/lv_log.h \
+ /home/lele/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/heap/include/esp_heap_caps.h \
+ /home/lele/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/heap/include/multi_heap.h \
+ /home/lele/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_common/include/esp_err.h \
+ /home/lele/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32s3/include/esp_common/include/esp_compiler.h

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LeleWatch - Aprender Controle</title>
+  <style>
+    :root { --primary: #00ff88; }
+    body {
+      background:#000;
+      color:var(--primary);
+      font-family:'Orbitron',sans-serif;
+      text-align:center;
+      min-height:100vh;
+      padding:40px;
+      display:flex;
+      flex-direction:column;
+      justify-content:center;
+    }
+    .dragon { font-size:120px; animation:float 4s infinite; margin-bottom:30px; }
+    h1 { font-size:3rem; text-shadow:0 0 40px var(--primary); margin:30px 0; }
+    input {
+      width:90%;
+      padding:25px;
+      font-size:2rem;
+      background:#111;
+      border:3px solid var(--primary);
+      border-radius:20px;
+      color:var(--primary);
+      text-align:center;
+      margin:30px auto;
+    }
+    button {
+      width:90%;
+      padding:30px;
+      font-size:2.5rem;
+      background:var(--primary);
+      color:#000;
+      border:none;
+      border-radius:25px;
+      cursor:pointer;
+      box-shadow:0 0 50px var(--primary);
+      font-weight:900;
+      animation:pulse 2s infinite;
+    }
+    @keyframes float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-40px); } }
+    @keyframes pulse { 0%,100% { box-shadow:0 0 50px var(--primary); } 50% { box-shadow:0 0 80px var(--primary); } }
+  </style>
+</head>
+
+<body>
+  <div class="dragon">DRAGÃO</div>
+  <h1>APRENDER NOVO CONTROLE</h1>
+  <p style="font-size:1.5rem;margin:40px 0;">Aponte o controle original pro LeleWatch<br>e pressione qualquer botão...</p>
+  <input type="text" id="nome" placeholder="Ex: Ar Quarto, TV Sala, Projetor Netflix">
+  <button onclick="salvar()">SALVAR CONTROLE AGORA</button>
+
+  <script>
+    function salvar() {
+      let nome = document.getElementById('nome').value.trim();
+      if (!nome) {
+        alert("Digite um nome pro controle!");
+        return;
+      }
+      fetch('/ir_learn', {
+        method: 'POST',
+        body: nome
+      }).then(r => r.text()).then(msg => {
+        alert("SUCESSO! " + nome + " aprendido e salvo!");
+        window.location.href = "/ir_control.html";
+      }).catch(() => {
+        alert("Erro! Tente de novo.");
+      });
+    }
+  </script>
+</body>
+</html>

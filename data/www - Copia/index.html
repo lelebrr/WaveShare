@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>LeleWatch Command Center</title>
+
+    <!-- Fonts & Icons -->
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600;800&display=swap"
+        rel="stylesheet">
+
+    <!-- Core CSS -->
+    <link rel="stylesheet" href="css/main.css">
+    <link rel="stylesheet" href="css/themes.css">
+
+    <!-- Vendor Libs (CDN with local fallback logic would go here, simplified for now) -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.13.3/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css">
+</head>
+
+<body x-data="app()" x-init="init()" :class="theme">
+
+    <!-- Tip 4: Splash Screen -->
+    <div id="splash" x-show="loading" x-transition.opacity.duration.500ms>
+        <div class="dragon-loader">
+            <div class="dragon-model">🐉</div>
+            <div class="loading-text">NEURA9 SYSTEM INITIALIZING...</div>
+            <div class="progress-bar">
+                <div class="fill" :style="'width: ' + progress + '%'"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Layout -->
+    <div class="app-container" x-show="!loading" style="display: none;">
+
+        <!-- Tip 19: Sidebar -->
+        <nav class="sidebar" :class="{'collapsed': !sidebarOpen}">
+            <div class="brand">
+                <span class="logo">🐲</span>
+                <span class="text" x-show="sidebarOpen">LeleWatch</span>
+            </div>
+
+            <div class="menu">
+                <template x-for="item in menuItems">
+                    <a href="#" :class="{'active': currentTab === item.id}" @click.prevent="currentTab = item.id">
+                        <span class="icon" x-text="item.icon"></span>
+                        <span class="label" x-show="sidebarOpen" x-text="item.label"></span>
+                    </a>
+                </template>
+
+                <!-- External Link to SD Card Manager -->
+                <a href="/sd_manager.html">
+                    <span class="icon">💾</span>
+                    <span class="label" x-show="sidebarOpen">SD Manager</span>
+                </a>
+            </div>
+
+            <div class="status-footer">
+                <div class="connection-dot" :class="connected ? 'online' : 'offline'"></div>
+                <span x-show="sidebarOpen" x-text="connected ? 'ONLINE' : 'OFFLINE'"></span>
+            </div>
+        </nav>
+
+        <!-- Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <button class="toggle-btn" @click="sidebarOpen = !sidebarOpen">☰</button>
+                <div class="page-title" x-text="menuItems.find(i => i.id === currentTab)?.label"></div>
+                <div class="top-stats">
+                    <div class="stat"><span class="icon">🔋</span> <span x-text="status.battery + '%'"></span></div>
+                    <div class="stat"><span class="icon">📡</span> <span x-text="status.rssi || '-'"></span></div>
+                </div>
+            </header>
+
+            <!-- Views -->
+            <div class="view-container">
+
+                <!-- Dashboard -->
+                <div x-show="currentTab === 'dashboard'" class="view-dashboard fade-in">
+                    <!-- Tip 3: Floating Cards -->
+                    <div class="stats-grid">
+                        <div class="card glass">
+                            <h3>Handshakes</h3>
+                            <div class="big-number" x-text="status.handshakes">0</div>
+                        </div>
+                        <div class="card glass">
+                            <h3>Networks</h3>
+                            <div class="big-number" x-text="status.networks">0</div>
+                        </div>
+                        <div class="card glass">
+                            <h3>Uptime</h3>
+                            <div class="value-text" x-text="formatUptime(status.uptime)">00:00:00</div>
+                        </div>
+                    </div>
+
+                    <!-- Tip 11: Dragon 3D/Canvas would be here -->
+                    <div class="dragon-stage">
+                        <div class="dragon-placeholder">
+                            <span style="font-size: 5rem;">🐲</span>
+                            <p x-text="dragonMessage"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Terminal (Tip 21) -->
+                <div x-show="currentTab === 'terminal'" class="view-terminal fade-in">
+                    <div class="card terminal-card">
+                        <div id="terminal-container"></div>
+                    </div>
+                </div>
+
+                <!-- Attacks -->
+                <div x-show="currentTab === 'attacks'" class="view-attacks fade-in">
+                    <div class="card glass">
+                        <h3>Active Attacks</h3>
+                        <div class="attack-controls">
+                            <button class="btn danger" @click="toggleAttack('deauth')">⚡ Deauth Flood</button>
+                            <button class="btn warning" @click="toggleAttack('beacon')">📡 Beacon Flood</button>
+                            <button class="btn primary" @click="stopAll()">🛑 STOP ALL</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings (Tip 37) -->
+                <div x-show="currentTab === 'settings'" class="view-settings fade-in">
+                    <div class="card glass">
+                        <h3>Theme</h3>
+                        <div class="theme-switcher">
+                            <button @click="setTheme('dark')">🌑 Dark</button>
+                            <button @click="setTheme('cyberpunk')">🤖 Cyberpunk</button>
+                            <button @click="setTheme('matrix')">💻 Matrix</button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/app.js"></script>
+</body>
+
+</html>
